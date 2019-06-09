@@ -1,0 +1,38 @@
+# Objects
+*.o
+*.elf
+*.bin
+*.hex
+*.map
+*.lst
+*.lib
+
+# log files
+*.log
+*.swp
+
+# In IAR Project
+*.ewt
+*.xrl
+*.pbi
+Debug/
+settings/
+
+# In Keil Project
+*.uvguix*
+*.i
+*.cod
+*.axf
+*.d
+*.lib
+*.crf
+Objects/
+Listings/
+DebugConfig/
+
+# AltiumDesigner folder
+__Previews/
+History/
+*Logs*/
+*Outputs*/
+*.PrjPcbStructure
