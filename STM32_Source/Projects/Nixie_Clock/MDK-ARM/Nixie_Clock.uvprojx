@@ -415,6 +415,11 @@
               <FileType>1</FileType>
               <FilePath>..\src\ws2812b.c</FilePath>
             </File>
+            <File>
+              <FileName>hv57708.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\src\hv57708.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>

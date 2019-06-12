@@ -5,10 +5,10 @@
   * @version 0.1
   * @date    2-Jun-2019
   * @brief   WS2812B 全彩灯珠驱动
-            硬件 SPI 模拟 WS2812B 时序, SPI 的 8 位数据表示 WS2812B 的 1 位
-            STM32 主频 72 MHz, SPI 预分频 32, 则 SPI 一位数据传输时间为 444 ns
-            那么 SPI 1 Byte 数据可以表示 WS2812B 的 8/3 bits, 所以 1 Byte(8 bits)
-            单色数要用 3 Bytes SPI 数据表示
+  *         硬件 SPI 模拟 WS2812B 时序, SPI 的 8 位数据表示 WS2812B 的 1 位
+  *         STM32 主频 72 MHz, SPI 预分频 32, 则 SPI 一位数据传输时间为 444 ns
+  *         那么 SPI 1 Byte 数据可以表示 WS2812B 的 8/3 bits, 所以 1 Byte(8 bits)
+  *         单色数要用 3 Bytes SPI 数据表示
   ******************************************************************************
   */
   
@@ -127,9 +127,9 @@ void RGB_LED_Clear(void)
 /*******************************************************************************
   * @brief  通过 RGB 设置第 n 个灯珠颜色
   * @param  n 灯珠位置
-            r 红色数值
-            g 绿色数值
-            b 蓝色数值
+  *         r 红色数值
+  *         g 绿色数值
+  *         b 蓝色数值
   * @retval None
 *******************************************************************************/
 void RGB_LED_SetPixelRGB(uint16_t n, uint8_t r, uint8_t g, uint8_t b)
@@ -190,7 +190,7 @@ uint32_t RGB_LED_Wheel(uint8_t wheelPos)
 /*******************************************************************************
   * @brief  用颜色依次填充每个点
   * @param  c 要填充的颜色
-            wait 间隔时间, ms
+  *         wait 间隔时间, ms
   * @retval None
 *******************************************************************************/
 void RGB_LED_ColorWipe(uint32_t c, uint8_t wait)
@@ -246,7 +246,7 @@ void RGB_LED_RainbowCycle(uint8_t wait)
 /*******************************************************************************
   * @brief  影院风格
   * @param  c 要填充的颜色
-            wait 间隔时间, ms
+  *         wait 间隔时间, ms
   * @retval None
 *******************************************************************************/
 void RGB_LED_TheaterChase(uint32_t c, uint8_t wait) 
@@ -274,7 +274,7 @@ void RGB_LED_TheaterChase(uint32_t c, uint8_t wait)
 /*******************************************************************************
   * @brief  带彩虹效果的影院爬行灯
   * @param  wait 间隔时间, ms
-* @retval None
+  * @retval None
 *******************************************************************************/
 void RGB_LED_TheaterChaseRainbow(uint8_t wait) {
   for (int j = 0; j < 256; j++) 
