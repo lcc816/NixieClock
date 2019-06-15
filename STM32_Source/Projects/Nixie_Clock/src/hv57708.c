@@ -13,12 +13,6 @@
   
 /* Includes ------------------------------------------------------------------*/
 #include "hv57708.h"
-/* Private typedef -----------------------------------------------------------*/
-/* Private macro -------------------------------------------------------------*/
-/* Private define ------------------------------------------------------------*/
-/* Private variables ---------------------------------------------------------*/
-/* Private function prototypes -----------------------------------------------*/
-/* Private functions ---------------------------------------------------------*/
 
 /*******************************************************************************
   * @brief  HV57708 初始化
@@ -27,17 +21,19 @@
 *******************************************************************************/
 void HV57708_Init(void)
 {
+  /* 需要注意的是, HV57708 引脚的驱动电压为 5V, 而 STM32 推挽输出高电平
+  仅为 3.3V, 为了匹配电平, STM32 引脚应使用开漏输出并上拉到 5V */
   GPIO_InitTypeDef	GPIO_InitStructure;
 	/* CLK, LE, POL */
 	RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOC, ENABLE);
 	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_10 | GPIO_Pin_11 | GPIO_Pin_12;	
-	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_OD; // 推挽输出
+	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_OD; // 开漏输出
 	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz; // 速度50MHZ
 	GPIO_Init(GPIOC, &GPIO_InitStructure);
   /* 数据引脚 */
 	RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOC, ENABLE);
 	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_0 | GPIO_Pin_1 | GPIO_Pin_2 | GPIO_Pin_3;	
-	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP; // 推挽输出
+	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_OD; // 开漏输出
 	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz; // 速度50MHZ
 	GPIO_Init(GPIOC, &GPIO_InitStructure);
   
@@ -90,7 +86,7 @@ void HV57708_SendData(uint32_t datapart2, uint32_t datapart1)
     
     HV_CLK_H;
     /* 至少 62 ns */
-    __nop(); __nop(); __nop(); __nop();; __nop(); __nop();
+    __nop(); __nop(); __nop(); __nop(); __nop(); __nop();
     HV_CLK_L;
   }
   tmp = datapart2;

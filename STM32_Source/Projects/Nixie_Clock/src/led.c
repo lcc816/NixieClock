@@ -10,12 +10,6 @@
   
 /* Includes ------------------------------------------------------------------*/
 #include "led.h"
-/* Private typedef -----------------------------------------------------------*/
-/* Private define ------------------------------------------------------------*/
-/* Private macro -------------------------------------------------------------*/
-/* Private variables ---------------------------------------------------------*/
-/* Private function prototypes -----------------------------------------------*/
-/* Private functions ---------------------------------------------------------*/
 
 /*******************************************************************************
   * @brief  LED所用的GPIO端口初始化
@@ -46,7 +40,7 @@ void LED_On(void)
   GPIO_ResetBits(LED_GPIO_PORT, LED_PIN);
 }
 
-void LED_Toggle(void)
+void LED_Flip(void)
 {
   if (GPIO_ReadOutputDataBit(LED_GPIO_PORT, LED_PIN))
     GPIO_ResetBits(LED_GPIO_PORT, LED_PIN);
