@@ -15,6 +15,7 @@
 #include "ds3231.h"     // 高精度时钟, I2C 驱动
 #include "hv57708.h"    // 辉光管驱动
 #include "key.h"        // 按键驱动
+#include "buzzer.h"     // 蜂鸣器驱动
 
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
@@ -224,6 +225,7 @@ int main(void)
   WS2812B_Init();
   Neon_Init();
   HV57708_Init();
+  Buzzer_Init();
   
   uint8_t key;
   
