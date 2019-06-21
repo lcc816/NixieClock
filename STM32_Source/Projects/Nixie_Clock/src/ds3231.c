@@ -10,7 +10,7 @@
   
 /* Includes ------------------------------------------------------------------*/
 #include "ds3231.h"
-#include "i2c.h"
+#include "myiic.h"
 
 /* Private functions ---------------------------------------------------------*/
 uint8_t BcdToDec(uint8_t val);
@@ -32,10 +32,8 @@ TimeTypeDef DS3231_GetTime(void)
   TimeTypeDef time;
   uint8_t buffer[7];
   
-  /* 发送计时寄存器起始地址 */
-  I2C2_WriteByte(DS3231_ADDRESS, (uint8_t)0x00);
   /* 连续读取 7 个字节 */
-  I2C2_BufferRead(buffer, 7, DS3231_ADDRESS);
+  I2C_Read_nByte(DS3231_ADDRESS, (uint8_t)0x00, 7, buffer);
   
   time.second = BcdToDec(buffer[0]);
   time.minute = BcdToDec(buffer[1]);
@@ -67,19 +65,18 @@ TimeTypeDef DS3231_GetTime(void)
 *******************************************************************************/
 void DS3231_SetTime(TimeTypeDef time)
 {
-  uint8_t buffer[8];
-  /* buffer[0] 存放寄存器开始地址 */
-  buffer[0] = 0x00;
-  buffer[1] = DecToBcd(time.second);
-  buffer[2] = DecToBcd(time.minute);
-  buffer[3] = DecToBcd(time.hour);
-  buffer[4] = DecToBcd(time.day);
-  buffer[5] = DecToBcd(time.date);
-  buffer[6] = DecToBcd(time.month);
-  buffer[7] = DecToBcd(time.year);
+  uint8_t buffer[7];
+
+  buffer[0] = DecToBcd(time.second);
+  buffer[1] = DecToBcd(time.minute);
+  buffer[2] = DecToBcd(time.hour);
+  buffer[3] = DecToBcd(time.day);
+  buffer[4] = DecToBcd(time.date);
+  buffer[5] = DecToBcd(time.month);
+  buffer[6] = DecToBcd(time.year);
   
-  /* 连续写入多个字节 */
-  I2C2_BufferWrite(buffer, 8, DS3231_ADDRESS);
+  /* 连续写入 7 个字节 */
+  I2C_Write_nByte(DS3231_ADDRESS, 0x00, 7, buffer);
 }
 
 /*******************************************************************************
@@ -91,18 +88,17 @@ void DS3231_SetTime(TimeTypeDef time)
 void DS3231_SetAlarm1(uint8_t mode, TimeTypeDef time)
 {
   /* 闹钟 1 有连续 4 个寄存器, buffer[0] 存放起始地址 */
-  uint8_t buffer[5];
-  buffer[0] = 0x07;
-  buffer[1] = DecToBcd(time.second) | (mode & 0x01) << 7;
-  buffer[2] = DecToBcd(time.minute) | (mode & 0x02) << 6;
-  buffer[3] = DecToBcd(time.hour) | (mode & 0x04) << 5;
+  uint8_t buffer[4];
+  buffer[0] = DecToBcd(time.second) | (mode & 0x01) << 7;
+  buffer[1] = DecToBcd(time.minute) | (mode & 0x02) << 6;
+  buffer[2] = DecToBcd(time.hour) | (mode & 0x04) << 5;
   /* 按星期重复 or 日期重复 */
   if ((mode & 0x10) == 0x10)
-    buffer[4] = DecToBcd(time.day) | (mode & 0x08) << 4;
+    buffer[3] = DecToBcd(time.day) | (mode & 0x08) << 4;
   else
-    buffer[4] = DecToBcd(time.date) | (mode & 0x08) << 4;
-  
-  I2C2_BufferWrite(buffer, 5, DS3231_ADDRESS);
+    buffer[3] = DecToBcd(time.date) | (mode & 0x08) << 4;
+
+  I2C_Write_nByte(DS3231_ADDRESS, 0x07, 4, buffer);
 }
 
 /*******************************************************************************
@@ -113,18 +109,17 @@ void DS3231_SetAlarm1(uint8_t mode, TimeTypeDef time)
 *******************************************************************************/
 void DS3231_SetAlarm2(uint8_t mode, TimeTypeDef time)
 {
-  /* 闹钟 2 有连续 4 个寄存器, buffer[0] 存放起始地址 */
-  uint8_t buffer[4];
-  buffer[0] = 0x0B;
-  buffer[1] = DecToBcd(time.minute) | (mode & 0x01) << 7;
-  buffer[2] = DecToBcd(time.hour) | (mode & 0x02) << 6;
+  /* 闹钟 2 有连续 3 个寄存器, buffer[0] 存放起始地址 */
+  uint8_t buffer[3];
+  buffer[0] = DecToBcd(time.minute) | (mode & 0x01) << 7;
+  buffer[1] = DecToBcd(time.hour) | (mode & 0x02) << 6;
   /* 按星期重复 or 日期重复 */
   if ((mode & 0x08) == 0x08)
-    buffer[3] = DecToBcd(time.day) | (mode & 0x04) << 5;
+    buffer[2] = DecToBcd(time.day) | (mode & 0x04) << 5;
   else
-    buffer[3] = DecToBcd(time.date) | (mode & 0x04) << 5;
+    buffer[2] = DecToBcd(time.date) | (mode & 0x04) << 5;
   
-  I2C2_BufferWrite(buffer, 4, DS3231_ADDRESS);
+  I2C_Write_nByte(DS3231_ADDRESS, 0x0B, 3, buffer);
 }
 
 /*******************************************************************************
@@ -212,27 +207,27 @@ FunctionalState DS3231_CheckIfAlarm(uint8_t alarm)
 // 控制寄存器 0x0E
 uint8_t ReadControlByte(void)
 {
-  I2C2_WriteByte(DS3231_ADDRESS, 0x0E);
-  return I2C2_ReadByte(DS3231_ADDRESS);
+  uint8_t val;
+  I2C_Read_1Byte(DS3231_ADDRESS, 0x0E, &val);
+  return val;
 }
 
 void WriteControlByte(uint8_t data)
 {
-  uint8_t  temp[2] = {0x0E, data};
-  I2C2_BufferWrite(temp, 2, DS3231_ADDRESS);
+  I2C_Write_1Byte(DS3231_ADDRESS, 0x0E, data);
 }
 
 // 状态寄存器 0x0F
 uint8_t ReadStatusByte(void)
 {
-  I2C2_WriteByte(DS3231_ADDRESS, 0x0F);
-  return I2C2_ReadByte(DS3231_ADDRESS);
+  uint8_t val;
+  I2C_Read_1Byte(DS3231_ADDRESS, 0x0F, &val);
+  return val;
 }
 
 void WriteStatusByte(uint8_t data)
 {
-  uint8_t  temp[2] = {0x0F, data};
-  I2C2_BufferWrite(temp, 2, DS3231_ADDRESS);
+  I2C_Write_1Byte(DS3231_ADDRESS, 0x0F, data);
 }
 
 // 二十进制转换

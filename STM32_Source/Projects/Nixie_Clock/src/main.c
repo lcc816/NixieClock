@@ -9,7 +9,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include "delay.h"
 #include "usart.h"
-#include "i2c.h"
+#include "myiic.h"
 #include "led.h"
 #include "ds3231.h"     // 高精度时钟
 #include "hv57708.h"    // 辉光管驱动
@@ -258,7 +258,7 @@ int main(void)
   USART1_Configuration(115200);
 #endif
   HV57708_Init();
-  I2C2_Init(0x28, 50000); // 与实时时钟(DS3231)和温湿度传感器(SHT30)通信
+  I2C_Soft_Init(); // 与实时时钟(DS3231)和温湿度传感器(SHT30)通信
   
   LED_Init();
   LED_Off();
@@ -305,7 +305,7 @@ int main(void)
         KEY0_PRESS: 保存并退出设置
         KEY1_PRESS: 切换设置的位
         KEY2_PRESS: 增加数值
-        0         : 连续 15s 无按键退出设置
+        0         : 连续 20s 无按键退出设置
         **************************/
         if (key_value == KEY0_PRESS)
         {
@@ -349,7 +349,7 @@ int main(void)
         else // 无按键按下
         {
           null_cnt++;
-          if (null_cnt > 1500)
+          if (null_cnt > 2000)
           {
           #ifdef SERIAL_DEBUG 
             printf("Exit without saving\r\n");

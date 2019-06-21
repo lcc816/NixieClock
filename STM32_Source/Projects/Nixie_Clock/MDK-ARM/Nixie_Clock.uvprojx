@@ -391,11 +391,6 @@
               <FilePath>..\src\ds3231.c</FilePath>
             </File>
             <File>
-              <FileName>i2c.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\src\i2c.c</FilePath>
-            </File>
-            <File>
               <FileName>led.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\src\led.c</FilePath>
@@ -434,6 +429,11 @@
               <FileName>timer.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\src\timer.c</FilePath>
+            </File>
+            <File>
+              <FileName>myiic.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\src\myiic.c</FilePath>
             </File>
           </Files>
         </Group>
