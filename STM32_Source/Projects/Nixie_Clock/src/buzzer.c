@@ -1,9 +1,9 @@
 /*******************************************************************************
 * @file     --> buzzer.c
 * @author   --> Lichangchun
-* @version  --> 
-* @date     --> 13-Jun-2019
-* @brief    --> 蜂鸣器接在 PC6, 为 TIM3_CH1 重映射后的引脚
+* @version  --> v1.0
+* @date     --> 27-Jun-2019
+* @brief    --> 蜂鸣器接在 PC8, 为 TIM3_CH3 重映射后的引脚
 *******************************************************************************/
   
 /* Includes ------------------------------------------------------------------*/
@@ -19,6 +19,7 @@
 void Buzzer_Init(void)
 {
   TIM3_PWM_Init(28799, 0);	 //不分频. PWM频率=72000000/28000=2500Hz
+  TIM_SetCompare3(TIM3, 0);
 }
 
 /*******************************************************************************
@@ -28,15 +29,27 @@ void Buzzer_Init(void)
 *******************************************************************************/
 void Buzzer_Sound1(void)
 {
-  TIM_SetCompare1(TIM3, 5000);
+  TIM_SetCompare3(TIM3, 5000);
   delay_ms(150);
-  TIM_SetCompare1(TIM3, 0);
+  TIM_SetCompare3(TIM3, 0);
   delay_ms(100);
-  TIM_SetCompare1(TIM3, 5000);
+  TIM_SetCompare3(TIM3, 5000);
   delay_ms(150);
-  TIM_SetCompare1(TIM3, 0);
+  TIM_SetCompare3(TIM3, 0);
   delay_ms(100);
-  TIM_SetCompare1(TIM3, 5000);
+  TIM_SetCompare3(TIM3, 5000);
   delay_ms(150);
-  TIM_SetCompare1(TIM3, 0);
+  TIM_SetCompare3(TIM3, 0);
+}
+
+/*******************************************************************************
+* @brief    --> 嘀
+* @param    --> None
+* @retval   --> None
+*******************************************************************************/
+void Buzzer_Sound2(void)
+{
+  TIM_SetCompare3(TIM3, 5000);
+  delay_ms(150);
+  TIM_SetCompare3(TIM3, 0);
 }

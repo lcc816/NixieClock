@@ -20,9 +20,9 @@
 /* Exported macro ------------------------------------------------------------*/
 
 /* Exported define -----------------------------------------------------------*/
-#define LED_PIN                         GPIO_Pin_2
-#define LED_GPIO_PORT                   GPIOD
-#define LED_GPIO_CLK                    RCC_APB2Periph_GPIOD
+#define LED_PIN                         GPIO_Pin_13
+#define LED_GPIO_PORT                   GPIOC
+#define LED_GPIO_CLK                    RCC_APB2Periph_GPIOC
 
 /* Exported functions ------------------------------------------------------- */
 void LED_Init(void);

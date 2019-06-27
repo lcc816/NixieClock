@@ -18,7 +18,7 @@
 
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
-#define SERIAL_DEBUG    // 串口调试开关
+//#define SERIAL_DEBUG    // 串口调试开关
 
 #define DOT1_BIT    0x01 // 0001
 #define DOT2_BIT    0x02 // 0010
