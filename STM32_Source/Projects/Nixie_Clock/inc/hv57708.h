@@ -72,6 +72,7 @@
 
 /* Exported functions ------------------------------------------------------- */
 void HV57708_Init(void);
+void HV57708_TubePower(FunctionalState NewState);
 void HV57708_SendData(uint32_t datapart2, uint32_t datapart1);
 void HV57708_OutputData(void);
 void HV57708_Display(unsigned char data[]);

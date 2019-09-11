@@ -36,6 +36,12 @@ void HV57708_Init(void)
 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_OD; // 开漏输出
 	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz; // 速度50MHZ
 	GPIO_Init(GPIOC, &GPIO_InitStructure);
+  /* 辉光管电源开关 */
+	RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOB, ENABLE);
+	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_3;	
+	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP; // 开漏输出
+	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz; // 速度50MHZ
+	GPIO_Init(GPIOB, &GPIO_InitStructure);
   
 /******************************************************************************/
 
@@ -48,6 +54,19 @@ void HV57708_Init(void)
 
 	HV_CLK_L;
 	HV_LE_L;
+}
+
+/*******************************************************************************
+  * @brief  辉光管电源开关
+  * @param  NewState - 电源使能(ENABLE)或关闭(DISABLE)
+  * @retval None
+*******************************************************************************/
+void HV57708_TubePower(FunctionalState NewState)
+{
+  if (NewState != DISABLE)
+    GPIO_SetBits(GPIOB, ENABLE); /* 打开 */
+  else
+    GPIO_ResetBits(GPIOB, DISABLE);
 }
 
 /*******************************************************************************

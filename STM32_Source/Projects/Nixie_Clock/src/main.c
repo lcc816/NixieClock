@@ -266,6 +266,7 @@ int main(void)
   Neon_Init();
   Buzzer_Init();
   KEY_Init();
+  HV57708_TubePower(ENABLE);
   
   uint8_t cnt = 0;
   
