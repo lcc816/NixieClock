@@ -13,6 +13,7 @@
   
 /* Includes ------------------------------------------------------------------*/
 #include "hv57708.h"
+#include "delay.h"
 
 /*******************************************************************************
   * @brief  HV57708 初始化
@@ -31,29 +32,29 @@ void HV57708_Init(void)
 	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz; // 速度50MHZ
 	GPIO_Init(GPIOC, &GPIO_InitStructure);
   /* 数据引脚 */
-	RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOC, ENABLE);
-	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_0 | GPIO_Pin_1 | GPIO_Pin_2 | GPIO_Pin_3;	
+	RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOB, ENABLE);
+	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_12 | GPIO_Pin_13 | GPIO_Pin_14 | GPIO_Pin_15;	
 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_OD; // 开漏输出
 	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz; // 速度50MHZ
-	GPIO_Init(GPIOC, &GPIO_InitStructure);
+	GPIO_Init(GPIOB, &GPIO_InitStructure);
   /* 辉光管电源开关 */
-	RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOB, ENABLE);
+	/* PB3 复位后功能为 JTDO, 需重映射为普通 IO */
+  RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOB | RCC_APB2Periph_AFIO, ENABLE);
+  GPIO_PinRemapConfig(GPIO_Remap_SWJ_JTAGDisable, ENABLE); // JTAG-DP 关闭, SW-DP 使能
 	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_3;	
-	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP; // 开漏输出
+	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP; // 推挽输出
 	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz; // 速度50MHZ
 	GPIO_Init(GPIOB, &GPIO_InitStructure);
   
 /******************************************************************************/
 
-	HV_POL_H;
-
-	HV_DIN1_L;
-	HV_DIN2_L;
-	HV_DIN3_L;
-	HV_DIN4_L;
-
-	HV_CLK_L;
-	HV_LE_L;
+  HV57708_CLK_L;
+	HV57708_LE_H;
+  HV57708_POL_L; // 反相输出
+	HV57708_DIN1_L;
+	HV57708_DIN2_L;
+	HV57708_DIN3_L;
+	HV57708_DIN4_L;
 }
 
 /*******************************************************************************
@@ -64,9 +65,9 @@ void HV57708_Init(void)
 void HV57708_TubePower(FunctionalState NewState)
 {
   if (NewState != DISABLE)
-    GPIO_SetBits(GPIOB, ENABLE); /* 打开 */
+    GPIO_SetBits(GPIOB, GPIO_Pin_3); /* 打开 */
   else
-    GPIO_ResetBits(GPIOB, DISABLE);
+    GPIO_ResetBits(GPIOB, GPIO_Pin_3);
 }
 
 /*******************************************************************************
@@ -79,62 +80,67 @@ void HV57708_SendData(uint32_t datapart2, uint32_t datapart1)
 {
   uint8_t i;
   uint32_t tmp;
+  tmp = datapart2; // 高位在前
+  for (i = 0; i < 8; i++)
+  {
+    HV57708_CLK_L;
+    
+    if (tmp & 0x80000000)
+      HV57708_DIN4_H;
+    else
+      HV57708_DIN4_L;
+    tmp <<= 1;
+    if (tmp & 0x80000000)
+      HV57708_DIN3_H;
+    else
+      HV57708_DIN3_L;
+    tmp <<= 1;
+    if (tmp & 0x80000000)
+      HV57708_DIN2_H;
+    else
+      HV57708_DIN2_L;
+    tmp <<= 1;
+    if (tmp & 0x80000000)
+      HV57708_DIN1_H;
+    else
+      HV57708_DIN1_L;
+    tmp <<= 1;
+    
+    HV57708_CLK_H;
+    __nop(); __nop(); __nop(); __nop(); __nop(); __nop(); /* 至少 62 ns */
+    HV57708_CLK_L;
+    __nop(); __nop(); __nop(); __nop(); __nop(); __nop();
+  }
   tmp = datapart1;
   for (i = 0; i < 8; i++)
   {
-    if (tmp & 0x00000001)
-      HV_DIN1_H;
-    else
-      HV_DIN1_L;
-    tmp = tmp >> 1;
-    if (tmp & 0x00000001)
-      HV_DIN2_H;
-    else
-      HV_DIN2_L;
-    tmp = tmp >> 1;
-    if (tmp & 0x00000001)
-      HV_DIN3_H;
-    else
-      HV_DIN3_L;
-    tmp = tmp >> 1;
-    if (tmp & 0x00000001)
-      HV_DIN4_H;
-    else
-      HV_DIN4_L;
-    tmp = tmp >> 1;
+    HV57708_CLK_L;
     
-    HV_CLK_H;
-    /* 至少 62 ns */
+    if (tmp & 0x80000000)
+      HV57708_DIN4_H;
+    else
+      HV57708_DIN4_L;
+    tmp <<= 1;
+    if (tmp & 0x80000000)
+      HV57708_DIN3_H;
+    else
+      HV57708_DIN3_L;
+    tmp <<= 1;
+    if (tmp & 0x80000000)
+      HV57708_DIN2_H;
+    else
+      HV57708_DIN2_L;
+    tmp <<= 1;
+    if (tmp & 0x80000000)
+      HV57708_DIN1_H;
+    else
+      HV57708_DIN1_L;
+    tmp <<= 1;
+    
+    HV57708_CLK_H;
+    __nop(); __nop(); __nop(); __nop(); __nop(); __nop(); /* 至少 62 ns */
+    HV57708_CLK_L;
     __nop(); __nop(); __nop(); __nop(); __nop(); __nop();
-    HV_CLK_L;
-  }
-  tmp = datapart2;
-  for (i = 0; i < 8; i++)
-  {
-    if (tmp & 0x00000001)
-      HV_DIN1_H;
-    else
-      HV_DIN1_L;
-    tmp = tmp >> 1;
-    if (tmp & 0x00000001)
-      HV_DIN2_H;
-    else
-      HV_DIN2_L;
-    tmp = tmp >> 1;
-    if (tmp & 0x00000001)
-      HV_DIN3_H;
-    else
-      HV_DIN3_L;
-    tmp = tmp >> 1;
-    if (tmp & 0x00000001)
-      HV_DIN4_H;
-    else
-      HV_DIN4_L;
-    tmp = tmp >> 1;
-    
-    HV_CLK_H;
-    __nop(); __nop(); __nop(); __nop();; __nop(); __nop();
-    HV_CLK_L;
   }
 }
 
@@ -145,63 +151,95 @@ void HV57708_SendData(uint32_t datapart2, uint32_t datapart1)
 *******************************************************************************/
 void HV57708_OutputData(void)
 {
-  __nop(); __nop();
-  HV_LE_H;
+  HV57708_LE_L;
+  __nop(); __nop(); __nop();
+  HV57708_LE_H;
   /* 至少 25ns */
-  __nop(); __nop();
-  HV_LE_L;
-  __nop(); __nop();
+  __nop(); __nop(); __nop();
+  HV57708_LE_L;
 }
 
 /*******************************************************************************
   * @brief  将 HV57708 寄存器中的数据发送到引脚, 即锁存使能脉冲
-  * @param  data: data0 ~ data5 表示从低位到高位
+  * @param  data: data0 ~ data5 表示辉光管从左到右
   * @retval None
 *******************************************************************************/
-void HV57708_Display(unsigned char data[])
+void HV57708_Display(uint8_t data[])
 {
-  uint32_t part2 = 0xFFFFFFFF, part1 = 0xFFFFFFFF;
-  uint32_t temp;
-  uint16_t pos[6];
+  assert_param(data != NULL);
+  
+  uint32_t part2 = 0, part1 = 0;
+  uint32_t pos[6];
   uint8_t i;
   
   for (i = 0; i < 6; i++)
   {
     if (data[i] == 0)
-      pos[i] = 0x01FF;
+      pos[i] = 0x0200;
     else
-      pos[i] = 0x03FF ^ (1 << (data[i] - 1));
+      pos[i] = 0x03FF & (1 << (data[i] - 1));
   }
   
-  temp = pos[5];
-  temp <<= 18;
-  temp |= 0xFFC00FF;
-  part2 &= temp;
-  
-  temp = pos[4];
-  temp <<= 8;
-  temp |= 0xFFFD00FF;
-  part2 &= temp;
-  
-  temp = pos[3];
-  temp = temp << 30;
-  temp |= 0x3FFFFFFF;
-  part1 &= temp;
-  
-  temp = pos[2];
-  temp = temp << 20;
-  temp |= 0xC00FFFFF;
-  part1 &= temp;
-  
-  temp = pos[1];
-  temp = temp << 10;
-  temp |= 0xFFF003FF;
-  part1 &= temp;
-  
-  temp = pos[0];
-  temp |= 0xFFFFFD00;
-  part1 &= temp;
+  part1 = pos[0] | pos[1]<<10 | pos[2]<<20 | pos[3]<<30;
+  part2 = pos[3]>>2 | pos[4]<<8 | pos[5]<<18;
   
   HV57708_SendData(part2, part1);
 	HV57708_OutputData();
+}
+
+/*******************************************************************************
+  * @brief  依次设置 1 ~ 64 引脚输出高电平
+  * @param  None
+  * @retval None
+*******************************************************************************/
+void HV57708_Scan(void)
+{
+  uint32_t part1=0x00000000, part2=0x00000000;
+  for (int i = 0; i < 32; i++)
+  {
+    part1=0x00000000; part2=0x00000000;
+    part1 |= (1 << i);
+    HV57708_SendData(part2, part1);
+    HV57708_OutputData();
+  }
+  for (int i = 0; i < 32; i++)
+  {
+    part1=0x00000000; part2=0x00000000;
+    part1 |= (1 << i);
+    HV57708_SendData(part2, part1);
+    HV57708_OutputData();
+    delay_ms(500);
+  }
+  for (int i = 0; i < 32; i++)
+  {
+    part1=0x00000000; part2=0x00000000;
+    part2 |= (1 << i);
+    HV57708_SendData(part2, part1);
+    HV57708_OutputData();
+    delay_ms(500);
+  }
+}
+
+/*******************************************************************************
+  * @brief  设置某个引脚输出高电平
+  * @param  pin - 要输出高电平的引脚(1 ~ 64)
+  * @retval None
+*******************************************************************************/
+void HV57708_SetPin(uint8_t pin)
+{
+  uint32_t temp = 0x00000000;
+  if (pin > 64)
+    return;
+  if (pin <= 32)
+  {
+    temp |= (1 << (pin-1));
+    HV57708_SendData(0, temp);
+    HV57708_OutputData();
+  }
+  else
+  {
+    temp |= (1 << (pin-33));
+    HV57708_SendData(temp, 0);
+    HV57708_OutputData();
+  }
 }

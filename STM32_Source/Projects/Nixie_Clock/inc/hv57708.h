@@ -51,24 +51,22 @@
 /* Exported constants --------------------------------------------------------*/
 /* Exported macro ------------------------------------------------------------*/
 /* Exported define -----------------------------------------------------------*/
-//#define HV_MODE_NORMAL    1  // 顺序, DIR 接高
-//#define HV_MODE_INVERTION 0  // 逆序, DIR 接低
 
-#define HV_CLK_H      GPIO_SetBits(GPIOC, GPIO_Pin_11)
-#define HV_LE_H       GPIO_SetBits(GPIOC, GPIO_Pin_12)
-#define HV_POL_H      GPIO_SetBits(GPIOC, GPIO_Pin_10)
-#define HV_DIN1_H     GPIO_SetBits(GPIOC, GPIO_Pin_0)
-#define HV_DIN2_H     GPIO_SetBits(GPIOC, GPIO_Pin_1)
-#define HV_DIN3_H     GPIO_SetBits(GPIOC, GPIO_Pin_2)
-#define HV_DIN4_H     GPIO_SetBits(GPIOC, GPIO_Pin_3)
+#define HV57708_CLK_H      GPIO_SetBits(GPIOC, GPIO_Pin_11)
+#define HV57708_LE_H       GPIO_SetBits(GPIOC, GPIO_Pin_12)
+#define HV57708_POL_H      GPIO_SetBits(GPIOC, GPIO_Pin_10)
+#define HV57708_DIN1_H     GPIO_SetBits(GPIOB, GPIO_Pin_15)
+#define HV57708_DIN2_H     GPIO_SetBits(GPIOB, GPIO_Pin_14)
+#define HV57708_DIN3_H     GPIO_SetBits(GPIOB, GPIO_Pin_13)
+#define HV57708_DIN4_H     GPIO_SetBits(GPIOB, GPIO_Pin_12)
 
-#define HV_CLK_L      GPIO_ResetBits(GPIOC, GPIO_Pin_11)
-#define HV_LE_L       GPIO_ResetBits(GPIOC, GPIO_Pin_12)
-#define HV_POL_L      GPIO_ResetBits(GPIOC, GPIO_Pin_10)
-#define HV_DIN1_L     GPIO_ResetBits(GPIOC, GPIO_Pin_0)
-#define HV_DIN2_L     GPIO_ResetBits(GPIOC, GPIO_Pin_1)
-#define HV_DIN3_L     GPIO_ResetBits(GPIOC, GPIO_Pin_2)
-#define HV_DIN4_L     GPIO_ResetBits(GPIOC, GPIO_Pin_3)
+#define HV57708_CLK_L      GPIO_ResetBits(GPIOC, GPIO_Pin_11)
+#define HV57708_LE_L       GPIO_ResetBits(GPIOC, GPIO_Pin_12)
+#define HV57708_POL_L      GPIO_ResetBits(GPIOC, GPIO_Pin_10)
+#define HV57708_DIN1_L     GPIO_ResetBits(GPIOB, GPIO_Pin_15)
+#define HV57708_DIN2_L     GPIO_ResetBits(GPIOB, GPIO_Pin_14)
+#define HV57708_DIN3_L     GPIO_ResetBits(GPIOB, GPIO_Pin_13)
+#define HV57708_DIN4_L     GPIO_ResetBits(GPIOB, GPIO_Pin_12)
 
 /* Exported functions ------------------------------------------------------- */
 void HV57708_Init(void);
@@ -76,5 +74,8 @@ void HV57708_TubePower(FunctionalState NewState);
 void HV57708_SendData(uint32_t datapart2, uint32_t datapart1);
 void HV57708_OutputData(void);
 void HV57708_Display(unsigned char data[]);
+/*测试用*/
+void HV57708_Scan(void);
+void HV57708_SetPin(uint8_t pin);
 
 #endif /* __HV57708_H */
