@@ -43,19 +43,19 @@ uint8_t dis_data[6];        // 用于显示的数据暂存区
 *******************************************************************************/
 void Neon_Init(void)
 {
-  RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOB, ENABLE);
+  RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOC, ENABLE);
   
   GPIO_InitTypeDef GPIO_InitStructure;
-  GPIO_InitStructure.GPIO_Pin = GPIO_Pin_12 | GPIO_Pin_13 | GPIO_Pin_14 | GPIO_Pin_15;
+  GPIO_InitStructure.GPIO_Pin = GPIO_Pin_0 | GPIO_Pin_1 | GPIO_Pin_2 | GPIO_Pin_3;
   GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP; // 推挽输出
   GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-  GPIO_Init(GPIOB, &GPIO_InitStructure);
+  GPIO_Init(GPIOC, &GPIO_InitStructure);
   
   Neon_Status = RESET; // 熄灭所有氖泡
-  GPIO_ResetBits(GPIOB, GPIO_Pin_12); // DOT1
-  GPIO_ResetBits(GPIOB, GPIO_Pin_13); // DOT2
-  GPIO_ResetBits(GPIOB, GPIO_Pin_14); // DOT3
-  GPIO_ResetBits(GPIOB, GPIO_Pin_15); // DOT4
+  GPIO_ResetBits(GPIOC, GPIO_Pin_0); // DOT1
+  GPIO_ResetBits(GPIOC, GPIO_Pin_1); // DOT2
+  GPIO_ResetBits(GPIOC, GPIO_Pin_2); // DOT3
+  GPIO_ResetBits(GPIOC, GPIO_Pin_3); // DOT4
 }
 
 /*******************************************************************************
@@ -67,16 +67,16 @@ void Neon_Init(void)
 void Neon_On(uint8_t dot)
 {
   if (dot & DOT1_BIT)
-    GPIO_SetBits(GPIOB, GPIO_Pin_12);
+    GPIO_SetBits(GPIOC, GPIO_Pin_0);
   
   if (dot & DOT2_BIT)
-    GPIO_SetBits(GPIOB, GPIO_Pin_13);
+    GPIO_SetBits(GPIOC, GPIO_Pin_1);
   
   if (dot & DOT3_BIT)
-    GPIO_SetBits(GPIOB, GPIO_Pin_14);
+    GPIO_SetBits(GPIOC, GPIO_Pin_2);
   
   if (dot & DOT4_BIT)
-    GPIO_SetBits(GPIOB, GPIO_Pin_15);
+    GPIO_SetBits(GPIOC, GPIO_Pin_3);
 }
 
 /*******************************************************************************
@@ -88,16 +88,16 @@ void Neon_On(uint8_t dot)
 void Neon_Off(uint8_t dot)
 {
   if (dot & DOT1_BIT)
-    GPIO_ResetBits(GPIOB, GPIO_Pin_12);
+    GPIO_ResetBits(GPIOC, GPIO_Pin_0);
   
   if (dot & DOT2_BIT)
-    GPIO_ResetBits(GPIOB, GPIO_Pin_13);
+    GPIO_ResetBits(GPIOC, GPIO_Pin_1);
   
   if (dot & DOT3_BIT)
-    GPIO_ResetBits(GPIOB, GPIO_Pin_14);
+    GPIO_ResetBits(GPIOC, GPIO_Pin_2);
   
   if (dot & DOT4_BIT)
-    GPIO_ResetBits(GPIOB, GPIO_Pin_15);
+    GPIO_ResetBits(GPIOC, GPIO_Pin_3);
 }
 
 /*******************************************************************************
@@ -109,31 +109,31 @@ void Neon_Flip(uint8_t dot)
 {
   if (dot & DOT1_BIT)
   {
-    if (GPIO_ReadOutputDataBit(GPIOB, GPIO_Pin_12))
-      GPIO_ResetBits(GPIOB, GPIO_Pin_12);
+    if (GPIO_ReadOutputDataBit(GPIOC, GPIO_Pin_0))
+      GPIO_ResetBits(GPIOC, GPIO_Pin_0);
     else 
-      GPIO_SetBits(GPIOB, GPIO_Pin_12);
+      GPIO_SetBits(GPIOC, GPIO_Pin_0);
   }
   if (dot & DOT2_BIT)
   {
-    if (GPIO_ReadOutputDataBit(GPIOB, GPIO_Pin_13))
-      GPIO_ResetBits(GPIOB, GPIO_Pin_13);
+    if (GPIO_ReadOutputDataBit(GPIOB, GPIO_Pin_1))
+      GPIO_ResetBits(GPIOC, GPIO_Pin_1);
     else 
-      GPIO_SetBits(GPIOB, GPIO_Pin_13);
+      GPIO_SetBits(GPIOC, GPIO_Pin_1);
   }
   if (dot & DOT3_BIT)
   {
-    if (GPIO_ReadOutputDataBit(GPIOB, GPIO_Pin_14))
-      GPIO_ResetBits(GPIOB, GPIO_Pin_14);
+    if (GPIO_ReadOutputDataBit(GPIOB, GPIO_Pin_2))
+      GPIO_ResetBits(GPIOC, GPIO_Pin_2);
     else 
-      GPIO_SetBits(GPIOB, GPIO_Pin_14);
+      GPIO_SetBits(GPIOC, GPIO_Pin_2);
   }
   if (dot & DOT4_BIT)
   {
-    if (GPIO_ReadOutputDataBit(GPIOB, GPIO_Pin_15))
-      GPIO_ResetBits(GPIOB, GPIO_Pin_15);
+    if (GPIO_ReadOutputDataBit(GPIOB, GPIO_Pin_3))
+      GPIO_ResetBits(GPIOC, GPIO_Pin_3);
     else 
-      GPIO_SetBits(GPIOB, GPIO_Pin_15);
+      GPIO_SetBits(GPIOC, GPIO_Pin_3);
   }
 }
 
@@ -159,22 +159,22 @@ void Neon_FlipAll(void)
 *******************************************************************************/
 void Time_Display(void)
 {
-  dis_data[0] = time.second % 10;
-  dis_data[1] = time.second / 10;
-  dis_data[2] = time.minute % 10;
-  dis_data[3] = time.minute / 10;
-  dis_data[4] = time.hour % 10;
-  dis_data[5] = time.hour / 10;
+  dis_data[5] = time.second % 10;
+  dis_data[4] = time.second / 10;
+  dis_data[3] = time.minute % 10;
+  dis_data[2] = time.minute / 10;
+  dis_data[1] = time.hour % 10;
+  dis_data[0] = time.hour / 10;
   
   /* 每秒闪烁冒号 */
-  if (dis_data[0] != second_previous)
+  if (dis_data[5] != second_previous)
   {
-    second_previous = dis_data[0];
+    second_previous = dis_data[5];
     Neon_FlipAll();
     /* 打印调试 */
   #ifdef SERIAL_DEBUG
     printf("%u%u:%u%u:%u%u\r\n",
-      dis_data[5], dis_data[4], dis_data[3], dis_data[2], dis_data[1], dis_data[0]);
+      dis_data[0], dis_data[1], dis_data[2], dis_data[3], dis_data[4], dis_data[5]);
   #endif
   }
   
@@ -188,16 +188,16 @@ void Time_Display(void)
 *******************************************************************************/
 void Date_Display(void)
 {
-  dis_data[0] = time.date % 10;
-  dis_data[1] = time.date / 10;
-  dis_data[2] = time.month % 10;
-  dis_data[3] = time.month / 10;
-  dis_data[4] = time.year % 10;
-  dis_data[5] = time.year / 10;
+  dis_data[5] = time.date % 10;
+  dis_data[4] = time.date / 10;
+  dis_data[3] = time.month % 10;
+  dis_data[2] = time.month / 10;
+  dis_data[1] = time.year % 10;
+  dis_data[0] = time.year / 10;
   
 #ifdef SERIAL_DEBUG
   printf("20%u%u-%u%u-%u%u\r\n",
-    dis_data[5], dis_data[4], dis_data[3], dis_data[2], dis_data[1], dis_data[0]);
+    dis_data[0], dis_data[1], dis_data[2], dis_data[3], dis_data[4], dis_data[5]);
 #endif
   
   /* 不显示冒号 */
@@ -275,9 +275,6 @@ int main(void)
     /* 重设彩灯颜色 */
     //WS2812B_SetPixelRGBAll(r, g, b);
     //WS2812B_Show();
-    
-    /* 更新时间读数 */
-    time = DS3231_GetTime();
     
     /* 检查按键状态 */
     if (key0_long_flag) /* key0 长按, 进入设置 */
@@ -424,6 +421,8 @@ int main(void)
       delay_ms(1000);
     }
     
+    /* 更新时间读数 */
+    time = DS3231_GetTime();
     /* 默认显示时间 */
     Time_Display();
     cnt++;

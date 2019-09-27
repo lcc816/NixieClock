@@ -53,16 +53,16 @@ void TIM3_PWM_Init(uint16_t arr, uint16_t psc)
 {
   GPIO_InitTypeDef GPIO_InitStructure;
   TIM_TimeBaseInitTypeDef  TIM_TimeBaseStructure;
-  TIM_OCInitTypeDef  TIM_OCInitStructure;     // TIM3 CH1
+  TIM_OCInitTypeDef  TIM_OCInitStructure;     // TIM3 CH3
   
   RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM3, ENABLE);	// 使能 TIM3 时钟
-  /* 要将 TIM3_CH1 重映射到 PC6, 要同时开启 GPIOC 和 AFIO 的时钟 */
+  /* 要将 TIM3_CH3 重映射到 PC8, 要同时开启 GPIOC 和 AFIO 的时钟 */
   RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOC | RCC_APB2Periph_AFIO, ENABLE);
   
-  GPIO_PinRemapConfig(GPIO_FullRemap_TIM3, ENABLE);  // 重映射 TIM3_CH1->PC6
+  GPIO_PinRemapConfig(GPIO_FullRemap_TIM3, ENABLE);  // 重映射 TIM3_CH3->PC8
   
-  /* 设置该引脚为复用输出功能, 输出 TIM3_CH1 的 PWM 脉冲波形	GPIOC.6 */
-  GPIO_InitStructure.GPIO_Pin = GPIO_Pin_6;       // TIM3_CH1
+  /* 设置该引脚为复用输出功能, 输出 TIM3_CH3 的 PWM 脉冲波形	GPIOC.8 */
+  GPIO_InitStructure.GPIO_Pin = GPIO_Pin_8;       // TIM3_CH3
   GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF_PP; // 复用推挽输出
   GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
   GPIO_Init(GPIOC, &GPIO_InitStructure);          // 初始化 GPIO
@@ -74,12 +74,12 @@ void TIM3_PWM_Init(uint16_t arr, uint16_t psc)
   TIM_TimeBaseStructure.TIM_CounterMode = TIM_CounterMode_Up;  //TIM向上计数模式
   TIM_TimeBaseInit(TIM3, &TIM_TimeBaseStructure); //根据TIM_TimeBaseInitStruct中指定的参数初始化TIMx的时间基数单位
   
-  /* 初始化 TIM3_CH1 的 PWM 模式 */
+  /* 初始化 TIM3_CH3 的 PWM 模式 */
   TIM_OCInitStructure.TIM_OCMode = TIM_OCMode_PWM2; //选择定时器模式:TIM PWM模式2
   TIM_OCInitStructure.TIM_OutputState = TIM_OutputState_Enable; //比较输出使能
   TIM_OCInitStructure.TIM_OCPolarity = TIM_OCPolarity_High; //输出极性: 高电平有效
-  TIM_OC1Init(TIM3, &TIM_OCInitStructure); //根据TIM_OCInitStructure指定的参数初始化外设TIM3的输出比较1
+  TIM_OC3Init(TIM3, &TIM_OCInitStructure); //根据TIM_OCInitStructure指定的参数初始化外设TIM3的输出比较3
   
-  TIM_OC1PreloadConfig(TIM3, TIM_OCPreload_Enable); //使能预装载寄存器
+  TIM_OC3PreloadConfig(TIM3, TIM_OCPreload_Enable); //使能预装载寄存器
   TIM_Cmd(TIM3, ENABLE);  //使能TIM3
 }
