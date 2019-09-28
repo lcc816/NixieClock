@@ -74,6 +74,7 @@ void HV57708_TubePower(FunctionalState NewState);
 void HV57708_SendData(uint32_t datapart2, uint32_t datapart1);
 void HV57708_OutputData(void);
 void HV57708_Display(unsigned char data[]);
+void HV57708_Protection(void);
 /*测试用*/
 void HV57708_Scan(void);
 void HV57708_SetPin(uint8_t pin);

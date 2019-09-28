@@ -31,6 +31,7 @@ uint8_t r=138, g=43, b=226; // 彩灯颜色的 RGB 值
 FlagStatus Neon_Status;     // 记录氖泡亮灭状态
 TimeTypeDef time = {0};     // 记录当前时间
 uint8_t second_previous;    // 前一秒读数
+uint8_t minute_previous;    // 前一分读数
 uint8_t dis_data[6];        // 用于显示的数据暂存区
 
 /* Private function prototypes -----------------------------------------------*/
@@ -178,7 +179,14 @@ void Time_Display(void)
   #endif
   }
   
-  HV57708_Display(dis_data);
+  if (dis_data[2] != minute_previous)
+  {
+    /* 每 10 分钟阴极保护 */
+    minute_previous = dis_data[2];
+    HV57708_Protection();
+  }
+  else
+    HV57708_Display(dis_data);
 }
 
 /*******************************************************************************
