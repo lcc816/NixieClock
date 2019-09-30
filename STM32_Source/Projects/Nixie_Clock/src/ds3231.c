@@ -27,9 +27,9 @@ void WriteStatusByte(uint8_t data);
   * @param  None
   * @retval 存储当前时间的结构体
 *******************************************************************************/
-TimeTypeDef DS3231_GetTime(void)
+Time_TypeDef DS3231_GetTime(void)
 {
-  TimeTypeDef time;
+  Time_TypeDef time;
   uint8_t buffer[7];
   
   /* 连续读取 7 个字节 */
@@ -63,7 +63,7 @@ TimeTypeDef DS3231_GetTime(void)
   * @param  time 要设置的时间
   * @retval None
 *******************************************************************************/
-void DS3231_SetTime(TimeTypeDef time)
+void DS3231_SetTime(Time_TypeDef time)
 {
   uint8_t buffer[7];
 
@@ -85,7 +85,7 @@ void DS3231_SetTime(TimeTypeDef time)
   *         time 要设置的时间
   * @retval None
 *******************************************************************************/
-void DS3231_SetAlarm1(uint8_t mode, TimeTypeDef time)
+void DS3231_SetAlarm1(uint8_t mode, Time_TypeDef time)
 {
   /* 闹钟 1 有连续 4 个寄存器, buffer[0] 存放起始地址 */
   uint8_t buffer[4];
@@ -107,7 +107,7 @@ void DS3231_SetAlarm1(uint8_t mode, TimeTypeDef time)
   *         time 要设置的时间
   * @retval None
 *******************************************************************************/
-void DS3231_SetAlarm2(uint8_t mode, TimeTypeDef time)
+void DS3231_SetAlarm2(uint8_t mode, Time_TypeDef time)
 {
   /* 闹钟 2 有连续 3 个寄存器, buffer[0] 存放起始地址 */
   uint8_t buffer[3];

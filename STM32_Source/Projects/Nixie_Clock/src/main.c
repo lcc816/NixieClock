@@ -24,7 +24,7 @@
 /* Private macro -------------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
 uint8_t r=138, g=43, b=226; // 彩灯颜色的 RGB 值
-TimeTypeDef time = {0};     // 记录当前时间
+Time_TypeDef time = {0};     // 记录当前时间
 uint8_t second_previous;    // 前一秒读数
 uint8_t minute_previous;    // 前一分读数
 uint8_t dis_data[6];        // 用于显示的数据暂存区

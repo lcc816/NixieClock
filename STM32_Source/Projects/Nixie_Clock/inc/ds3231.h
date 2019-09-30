@@ -25,7 +25,7 @@ typedef struct
   uint8_t hour;
   uint8_t minute;
   uint8_t second;
-} TimeTypeDef;
+} Time_TypeDef;
 
 /* Exported constants --------------------------------------------------------*/
 /* Exported macro ------------------------------------------------------------*/
@@ -47,10 +47,10 @@ typedef struct
 #define  DayHourMinute        0x00 // 星期-时-分
 
 /* Exported functions ------------------------------------------------------- */
-TimeTypeDef DS3231_GetTime(void);
-void DS3231_SetTime(TimeTypeDef time);
-void DS3231_SetAlarm1(uint8_t mode, TimeTypeDef time);
-void DS3231_SetAlarm2(uint8_t mode, TimeTypeDef time);
+Time_TypeDef DS3231_GetTime(void);
+void DS3231_SetTime(Time_TypeDef time);
+void DS3231_SetAlarm1(uint8_t mode, Time_TypeDef time);
+void DS3231_SetAlarm2(uint8_t mode, Time_TypeDef time);
 void DS3231_TurnOnAlarm(uint8_t alarm);
 void DS3231_TurnOffAlarm(uint8_t alarm);
 FunctionalState DS3231_CheckAlarmEnabled(uint8_t alarm);
