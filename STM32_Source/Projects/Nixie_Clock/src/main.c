@@ -151,6 +151,7 @@ int main(void)
   //WS2812B_Init();
   Neon_Init();
   Buzzer_Init();
+  Buzzer_Sound2(); // 嘀
   KEY_Init();
   HV57708_TubePower(ENABLE);
   
