@@ -431,14 +431,14 @@
               <FilePath>..\src\timer.c</FilePath>
             </File>
             <File>
-              <FileName>myiic.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\src\myiic.c</FilePath>
-            </File>
-            <File>
               <FileName>neon.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\src\neon.c</FilePath>
+            </File>
+            <File>
+              <FileName>i2c_soft.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\src\i2c_soft.c</FilePath>
             </File>
           </Files>
         </Group>
@@ -514,11 +514,6 @@
               <FileName>stm32f10x_gpio.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\..\..\Libraries\STM32F10x_StdPeriph_Driver\src\stm32f10x_gpio.c</FilePath>
-            </File>
-            <File>
-              <FileName>stm32f10x_i2c.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\..\..\Libraries\STM32F10x_StdPeriph_Driver\src\stm32f10x_i2c.c</FilePath>
             </File>
             <File>
               <FileName>stm32f10x_rcc.c</FileName>

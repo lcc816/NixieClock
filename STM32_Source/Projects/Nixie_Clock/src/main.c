@@ -9,7 +9,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include "delay.h"
 #include "usart.h"
-#include "myiic.h"
+#include "i2c_soft.h"
 #include "led.h"
 #include "neon.h"       // 氖泡驱动
 #include "ds3231.h"     // 高精度时钟
@@ -144,7 +144,7 @@ int main(void)
   USART1_Configuration(115200);
 #endif
   HV57708_Init();
-  I2C_Soft_Init(); // 与实时时钟(DS3231)和温湿度传感器(SHT30)通信
+  I2c_Init(); // 与实时时钟(DS3231)和温湿度传感器(SHT30)通信
   
   LED_Init();
   LED_Off();

@@ -31,7 +31,7 @@ typedef struct
 /* Exported macro ------------------------------------------------------------*/
 /* Exported define -----------------------------------------------------------*/
 /* DS3231 的 I2C 地址 */
-#define DS3231_ADDRESS      0xD0
+#define DS3231_ADDRESS      0x68
 
 /* 闹钟屏蔽位 */
 #define  OncePerSecond          0x0F // 每秒

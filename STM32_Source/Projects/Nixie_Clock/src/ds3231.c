@@ -10,7 +10,7 @@
   
 /* Includes ------------------------------------------------------------------*/
 #include "ds3231.h"
-#include "myiic.h"
+#include "i2c_soft.h"
 
 /* Private functions ---------------------------------------------------------*/
 uint8_t BcdToDec(uint8_t val);
@@ -33,7 +33,7 @@ Time_TypeDef DS3231_GetTime(void)
   uint8_t buffer[7];
   
   /* 连续读取 7 个字节 */
-  I2C_Read_nByte(DS3231_ADDRESS, (uint8_t)0x00, 7, buffer);
+  I2c_Read_nByte(DS3231_ADDRESS, (uint8_t)0x00, 7, buffer);
   
   time.second = BcdToDec(buffer[0]);
   time.minute = BcdToDec(buffer[1]);
@@ -76,7 +76,7 @@ void DS3231_SetTime(Time_TypeDef time)
   buffer[6] = DecToBcd(time.year);
   
   /* 连续写入 7 个字节 */
-  I2C_Write_nByte(DS3231_ADDRESS, 0x00, 7, buffer);
+  I2c_Write_nByte(DS3231_ADDRESS, 0x00, 7, buffer);
 }
 
 /*******************************************************************************
@@ -98,7 +98,7 @@ void DS3231_SetAlarm1(uint8_t mode, Time_TypeDef time)
   else
     buffer[3] = DecToBcd(time.date) | (mode & 0x08) << 4;
 
-  I2C_Write_nByte(DS3231_ADDRESS, 0x07, 4, buffer);
+  I2c_Write_nByte(DS3231_ADDRESS, 0x07, 4, buffer);
 }
 
 /*******************************************************************************
@@ -119,7 +119,7 @@ void DS3231_SetAlarm2(uint8_t mode, Time_TypeDef time)
   else
     buffer[2] = DecToBcd(time.date) | (mode & 0x04) << 5;
   
-  I2C_Write_nByte(DS3231_ADDRESS, 0x0B, 3, buffer);
+  I2c_Write_nByte(DS3231_ADDRESS, 0x0B, 3, buffer);
 }
 
 /*******************************************************************************
@@ -208,26 +208,26 @@ FunctionalState DS3231_CheckIfAlarm(uint8_t alarm)
 uint8_t ReadControlByte(void)
 {
   uint8_t val;
-  I2C_Read_1Byte(DS3231_ADDRESS, 0x0E, &val);
+  I2c_Read_1Byte(DS3231_ADDRESS, 0x0E, &val);
   return val;
 }
 
 void WriteControlByte(uint8_t data)
 {
-  I2C_Write_1Byte(DS3231_ADDRESS, 0x0E, data);
+  I2c_Write_1Byte(DS3231_ADDRESS, 0x0E, data);
 }
 
 // 状态寄存器 0x0F
 uint8_t ReadStatusByte(void)
 {
   uint8_t val;
-  I2C_Read_1Byte(DS3231_ADDRESS, 0x0F, &val);
+  I2c_Read_1Byte(DS3231_ADDRESS, 0x0F, &val);
   return val;
 }
 
 void WriteStatusByte(uint8_t data)
 {
-  I2C_Write_1Byte(DS3231_ADDRESS, 0x0F, data);
+  I2c_Write_1Byte(DS3231_ADDRESS, 0x0F, data);
 }
 
 // 二十进制转换
