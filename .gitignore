@@ -20,6 +20,7 @@ settings/
 
 # In Keil Project
 *.uvguix*
+*.uvoptx
 *.i
 *.cod
 *.axf
