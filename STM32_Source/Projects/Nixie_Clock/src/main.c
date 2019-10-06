@@ -11,7 +11,7 @@
 #include "usart.h"
 #include "i2c_soft.h"
 #include "led.h"
-#include "neon.h"       // 氖泡驱动
+#include "display.h"
 #include "ds3231.h"     // 高精度时钟
 #include "hv57708.h"    // 辉光管驱动
 #include "key.h"        // 按键驱动
@@ -23,75 +23,16 @@
 
 /* Private macro -------------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
-uint8_t r=138, g=43, b=226; // 彩灯颜色的 RGB 值
-Time_TypeDef time = {0};     // 记录当前时间
-uint8_t second_previous;    // 前一秒读数
-uint8_t minute_previous;    // 前一分读数
-uint8_t dis_data[6];        // 用于显示的数据暂存区
+uint8_t       r=138;          // 彩灯颜色的 RGB 值
+uint8_t       g=43; 
+uint8_t       b=226;
+Time_TypeDef  time = {0};     // 记录当前时间
+float         temperature;    // 温度 摄氏度
+float         humidity;       // 湿度 %RH
+extern uint8_t       dis_data[6];    // 用于显示的数据暂存区
 
 /* Private function prototypes -----------------------------------------------*/
 /* Private functions ---------------------------------------------------------*/
-
-/*******************************************************************************
-* @brief    --> 时间显示
-* @param    --> None
-* @retval   --> None
-*******************************************************************************/
-void Time_Display(void)
-{
-  dis_data[5] = time.second % 10;
-  dis_data[4] = time.second / 10;
-  dis_data[3] = time.minute % 10;
-  dis_data[2] = time.minute / 10;
-  dis_data[1] = time.hour % 10;
-  dis_data[0] = time.hour / 10;
-  
-  /* 每秒闪烁冒号 */
-  if (dis_data[5] != second_previous)
-  {
-    second_previous = dis_data[5];
-    Neon_FlipAll();
-    /* 打印调试 */
-  #ifdef SERIAL_DEBUG
-    printf("%u%u:%u%u:%u%u\r\n",
-      dis_data[0], dis_data[1], dis_data[2], dis_data[3], dis_data[4], dis_data[5]);
-  #endif
-  }
-  
-  if (dis_data[2] != minute_previous)
-  {
-    /* 每 10 分钟阴极保护 */
-    minute_previous = dis_data[2];
-    HV57708_Protection();
-  }
-  else
-    HV57708_Display(dis_data);
-}
-
-/*******************************************************************************
-* @brief    --> 日期显示
-* @param    --> None
-* @retval   --> None
-*******************************************************************************/
-void Date_Display(void)
-{
-  dis_data[5] = time.date % 10;
-  dis_data[4] = time.date / 10;
-  dis_data[3] = time.month % 10;
-  dis_data[2] = time.month / 10;
-  dis_data[1] = time.year % 10;
-  dis_data[0] = time.year / 10;
-  
-#ifdef SERIAL_DEBUG
-  printf("20%u%u-%u%u-%u%u\r\n",
-    dis_data[0], dis_data[1], dis_data[2], dis_data[3], dis_data[4], dis_data[5]);
-#endif
-  
-  /* 不显示冒号 */
-  Neon_AllOff();
-  
-  HV57708_Display(dis_data);
-}
 
 /*******************************************************************************
 * @brief    --> Time 结构体转换成数组
@@ -143,17 +84,16 @@ int main(void)
 #ifdef SERIAL_DEBUG // 如果开启串口调试则初始化 USART1
   USART1_Configuration(115200);
 #endif
-  HV57708_Init();
   I2c_Init(); // 与实时时钟(DS3231)和温湿度传感器(SHT30)通信
   
   LED_Init();
   LED_Off();
   //WS2812B_Init();
-  Neon_Init();
+  Display_Init();
   Buzzer_Init();
   Buzzer_Sound2(); // 嘀
   KEY_Init();
-  HV57708_TubePower(ENABLE);
+  Display_Init();
   
   uint8_t cnt = 0;
   
@@ -277,7 +217,7 @@ int main(void)
     if (key0_short_flag) /* key0 短按, 显示日期 */
     {
       key0_short_flag = 0;
-      Date_Display();
+      Date_Display(&time);
       /* 延时 3s */
       delay_ms(1000);
       delay_ms(1000);
@@ -311,7 +251,7 @@ int main(void)
     /* 更新时间读数 */
     time = DS3231_GetTime();
     /* 默认显示时间 */
-    Time_Display();
+    Time_Display(&time);
     cnt++;
     if (cnt == 50) // 每 500ms 翻转一次 LED
     {

@@ -62,6 +62,7 @@ void KEY_Init(void)
     GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IPD; // 下拉输入
   else
     GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IPU; // 上拉输入
+  GPIO_Init(KEY2_GPIO_PORT, &GPIO_InitStructure);
   
   /* 启用 Timer4, 每 1ms 中断一次, 即 1000Hz */
   TIM4_Int_Init(35999, 1); // f = 72000000 / (36000 * 2)
