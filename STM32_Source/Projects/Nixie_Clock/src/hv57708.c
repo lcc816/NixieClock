@@ -80,7 +80,7 @@ void HV57708_TubePower(FunctionalState NewState)
 *******************************************************************************/
 FlagStatus HV57708_TubePowerStatus(void)
 {
-  return GPIO_ReadInputDataBit(GPIOB, GPIO_Pin_3);
+  return (FlagStatus)GPIO_ReadInputDataBit(GPIOB, GPIO_Pin_3);
 }
 
 /*******************************************************************************

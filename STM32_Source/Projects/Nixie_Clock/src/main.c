@@ -13,6 +13,7 @@
 #include "led.h"
 #include "ds3231.h"     // 高精度时钟
 #include "hv57708.h"    // 辉光管驱动
+#include "neon.h"
 #include "key.h"        // 按键驱动
 #include "buzzer.h"     // 蜂鸣器驱动
 #include "display.h"
@@ -40,6 +41,11 @@ static void key1_single_clicked_handler(void *key);
 static void key1_long_pressed_handler(void *key);
 static void key2_single_clicked_handler(void *key);
 static void key2_long_pressed_handler(void *key);
+
+static void date_setting(void);
+static void clock_setting(void);
+static void alarm_setting(void);
+static int8_t select_setting_item(uint8_t total_items);
 
 static void date2array(DS3231_DateTypeDef *date, uint8_t array[]);
 static void array2date(DS3231_DateTypeDef *date, uint8_t array[]);
@@ -148,14 +154,90 @@ void key0_single_clicked_handler(void *key)
 }
 
 /*******************************************************************************
-  * @brief  key0 长按事件, 进入日期设置
+  * @brief  key0 长按事件, 进入设置
 *******************************************************************************/
 void key0_long_pressed_handler(void *key)
 {
+  int8_t ret;
   /* 进入设置后暂时关闭 Timer4, 随后将采用普通扫描模式读取按键值 */
   TIM_Cmd(TIM4, DISABLE);
   
+  /* 等待 KEY0 键释放, 重要, 否则会立即退出设置 */
+  while (KEY0 == KEY0_PRESS_LEVEL);
   
+  ret = select_setting_item(3);
+  
+  switch (ret)
+      {
+        case 1  : date_setting();
+                  break;
+        case 2  : clock_setting();
+                  break;
+        case 3  : alarm_setting();
+                  break;
+        case -1 :
+        default : break;
+      }
+  
+  /* 退出前打开 Timer4, 启用多按键时间扫描 */
+  TIM_Cmd(TIM4, ENABLE);
+}
+
+/*******************************************************************************
+  * @brief  key1 单击事件, 显示温度
+*******************************************************************************/
+void key1_single_clicked_handler(void *key)
+{
+  float temp = DS3231_GetTemperature();
+  TempOrHumi_Display(temp);
+  /* 延时 3s */
+  delay_ms(1000);
+  delay_ms(1000);
+  delay_ms(1000);
+}
+
+/*******************************************************************************
+  * @brief  key1 长按事件, 开启蓝牙(todo)
+*******************************************************************************/
+void key1_long_pressed_handler(void *key)
+{
+}
+
+void key2_single_clicked_handler(void *key)
+{
+}
+
+/*******************************************************************************
+  * @brief  key2 长按, 开/关辉光管
+*******************************************************************************/
+void key2_long_pressed_handler(void *key)
+{
+  if (HV57708_TubePowerStatus())
+    HV57708_TubePower(DISABLE);
+  else 
+    HV57708_TubePower(ENABLE);
+}
+
+/**
+  * @brief  Timer4 中断. 每 5ms 调用一次 button_ticks().
+  * @param  None
+  * @retval None
+  */
+void TIM4_IRQHandler(void)
+{
+  if (TIM_GetITStatus(TIM4, TIM_IT_Update) != RESET)
+  {
+    TIM_ClearITPendingBit(TIM4, TIM_IT_Update);
+    
+    button_ticks();
+  }
+}
+
+/*******************************************************************************
+  * @brief 日期设置
+*******************************************************************************/
+static void date_setting(void)
+{
   uint8_t             key_value; 
   uint16_t            null_cnt = 0; // 无按键计时, 每 10ms 递增
   uint8_t             blink = 0;    // 闪烁正在设置的位
@@ -231,31 +313,13 @@ void key0_long_pressed_handler(void *key)
     HV57708_Display(dis_data); // 显示
     delay_ms(10);
   }
-  /* 退出前打开 Timer4, 启用多按键时间扫描 */
-  TIM_Cmd(TIM4, ENABLE);
 }
 
 /*******************************************************************************
-  * @brief  key1 单击事件, 显示温度
+  * @brief 时间(Clock)设置
 *******************************************************************************/
-void key1_single_clicked_handler(void *key)
+void clock_setting(void)
 {
-  float temp = DS3231_GetTemperature();
-  TempOrHumi_Display(temp);
-  /* 延时 3s */
-  delay_ms(1000);
-  delay_ms(1000);
-  delay_ms(1000);
-}
-
-/*******************************************************************************
-  * @brief  key1 长按事件, 进入时间设置
-*******************************************************************************/
-void key1_long_pressed_handler(void *key)
-{
-  /* 进入设置后暂时关闭 Timer4, 随后将采用普通扫描模式读取按键值 */
-  TIM_Cmd(TIM4, DISABLE);
-  
   uint8_t             key_value; 
   uint16_t            null_cnt = 0; // 无按键计时, 每 10ms 递增
   uint8_t             blink = 0;    // 闪烁正在设置的位
@@ -268,9 +332,6 @@ void key1_long_pressed_handler(void *key)
   DS3231_GetClock(&clock);
   Clock_Display(&clock);
   clock2array(&clock, set_data);
-  
-  /* 等待 KEY1 键释放, 否则会不断切换设置的位 */
-  while (KEY1 == KEY1_PRESS_LEVEL);
   
   while (1)
   {
@@ -331,38 +392,13 @@ void key1_long_pressed_handler(void *key)
     HV57708_Display(dis_data); // 显示
     delay_ms(10);
   }
-  /* 退出前打开 Timer4, 启用多按键时间扫描 */
-  TIM_Cmd(TIM4, ENABLE);
-}
-
-void key2_single_clicked_handler(void *key)
-{
 }
 
 /*******************************************************************************
-  * @brief  key2 长按, 开/关辉光管
+  * @brief 闹钟设置
 *******************************************************************************/
-void key2_long_pressed_handler(void *key)
+void alarm_setting(void)
 {
-  if (HV57708_TubePowerStatus())
-    HV57708_TubePower(DISABLE);
-  else 
-    HV57708_TubePower(ENABLE);
-}
-
-/**
-  * @brief  Timer4 中断. 每 5ms 调用一次 button_ticks().
-  * @param  None
-  * @retval None
-  */
-void TIM4_IRQHandler(void)
-{
-  if (TIM_GetITStatus(TIM4, TIM_IT_Update) != RESET)
-  {
-    TIM_ClearITPendingBit(TIM4, TIM_IT_Update);
-    
-    button_ticks();
-  }
 }
 
 /*******************************************************************************
@@ -410,3 +446,81 @@ void array2clock(DS3231_ClockTypeDef *clock, uint8_t array[])
   clock->minute = array[2] * 10 + array[3];
   clock->second = array[4] * 10 + array[5];
 }
+
+/*******************************************************************************
+  * @brief  选择一个设置项
+  * @param  total_items - 可选设置项总数, 应在 1 ~ 6 之间
+  * @retval 返回选中的设置项, 退出设置返回 -1
+*******************************************************************************/
+int8_t select_setting_item(uint8_t total_items)
+{
+  uint8_t   key_value;
+  uint8_t   sw[6] = {11, 11, 11, 11, 11, 11};
+  uint8_t   pt = 1, i;
+  uint16_t  null_cnt = 0; // 无按键计时, 每 10ms 递增
+  uint8_t   blink = 0; // 闪烁标志
+  
+  Neon_AllOff();
+  
+  if (total_items > 6) total_items = 6;
+  for (i = 0; i < total_items; i++)
+  {
+    sw[i] = i + 1;
+  }
+  HV57708_Display(sw);
+  
+  /* 等待 KEY0 键释放, 重要, 否则会立即选中 */
+  while (KEY0 == KEY0_PRESS_LEVEL);
+  
+  while (1)
+  {
+    key_value = Keys_Scan();
+    /************************************
+    KEY0_PRESS: 返回选中的 item
+    KEY1_PRESS: 右移选中的位
+    KEY2_PRESS: 返回 -1 表示退出
+    0         : 连续 20s 无按键返回 -1
+    ************************************/
+    if (key_value == KEY0_PRESS)
+    {
+      while (KEY0 == KEY1_PRESS_LEVEL);
+      return pt;
+    }
+    else if (key_value == KEY1_PRESS)
+    {
+      while (KEY1 == KEY1_PRESS_LEVEL);
+      null_cnt = 0;
+      sw[pt-1] = pt;
+      pt++;
+      if (pt > total_items) pt = 1;
+    }
+    else if (key_value == KEY2_PRESS)
+    {
+      while (KEY2 == KEY1_PRESS_LEVEL);
+      return -1; // 直接退出
+    }
+    else // 无按键按下
+    {
+      null_cnt++;
+      if (null_cnt > 2000)
+      {
+        return -1;
+      }
+    }
+    
+    /* 闪烁正在设置的位 */
+    if (null_cnt % 50 == 0)
+    {
+      blink = !blink;
+    }
+    
+    if (blink)
+      sw[pt-1] = 11;
+    else
+      sw[pt-1] = pt;
+    
+    HV57708_Display(sw);
+    delay_ms(10);
+  }
+}
+

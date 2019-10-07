@@ -43,6 +43,8 @@ void Clock_Display(DS3231_ClockTypeDef *clock)
   dis_data[1] = clock->hour % 10;
   dis_data[0] = clock->hour / 10;
   
+  HV57708_Display(dis_data);
+  
   /* 每秒闪烁冒号 */
   if (dis_data[5] != second_previous)
   {
@@ -56,8 +58,6 @@ void Clock_Display(DS3231_ClockTypeDef *clock)
     minute_previous = dis_data[2];
     HV57708_Protection();
   }
-  else
-    HV57708_Display(dis_data);
 }
 
 /*******************************************************************************
