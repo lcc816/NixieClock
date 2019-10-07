@@ -12,9 +12,6 @@
 #include "neon.h"       // 氖泡驱动
 
 /* Private variables ---------------------------------------------------------*/
-uint8_t second_previous;    // 前一秒读数
-uint8_t minute_previous;    // 前一分读数
-uint8_t dis_data[6];        // 用于显示的数据暂存区
 
 /*******************************************************************************
 * @brief    --> 初始化
@@ -35,6 +32,10 @@ void Display_Init(void)
 *******************************************************************************/
 void Clock_Display(DS3231_ClockTypeDef *clock)
 {
+  static uint8_t second_previous;    // 前一秒读数
+  static uint8_t minute_previous;    // 前一分读数
+  uint8_t        dis_data[6];        // 用于显示的数据暂存区
+  
   dis_data[5] = clock->second % 10;
   dis_data[4] = clock->second / 10;
   dis_data[3] = clock->minute % 10;
@@ -66,6 +67,8 @@ void Clock_Display(DS3231_ClockTypeDef *clock)
 *******************************************************************************/
 void Date_Display(DS3231_DateTypeDef *date)
 {
+  uint8_t dis_data[6]; 
+  
   dis_data[5] = date->date % 10;
   dis_data[4] = date->date / 10;
   dis_data[3] = date->month % 10;
@@ -86,7 +89,8 @@ void Date_Display(DS3231_DateTypeDef *date)
 *******************************************************************************/
 void TempOrHumi_Display(float value)
 {
-  uint16_t data = value * 100;
+  uint8_t   dis_data[6]; 
+  uint16_t  data = value * 100;
   
   dis_data[0] = 11; // 最高两位不显示 (大于 10 的数字不会显示)
   dis_data[1] = 11;
@@ -99,5 +103,7 @@ void TempOrHumi_Display(float value)
   data = data % 10;
   dis_data[5] = data;
   
+  Neon_AllOff();
   HV57708_Display(dis_data);
+  Neon_On(DOT4_BIT);
 }

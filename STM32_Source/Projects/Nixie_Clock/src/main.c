@@ -240,6 +240,12 @@ void key0_long_pressed_handler(void *key)
 *******************************************************************************/
 void key1_single_clicked_handler(void *key)
 {
+  float temp = DS3231_GetTemperature();
+  TempOrHumi_Display(temp);
+  /* 延时 3s */
+  delay_ms(1000);
+  delay_ms(1000);
+  delay_ms(1000);
 }
 
 /*******************************************************************************

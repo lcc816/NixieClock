@@ -65,14 +65,20 @@ typedef struct
 void DS3231_GetTime(DS3231_TimeTypeDef *time);
 void DS3231_GetClock(DS3231_ClockTypeDef *clock);
 void DS3231_GetDate(DS3231_DateTypeDef *date);
+
 void DS3231_SetTime(DS3231_TimeTypeDef *time);
 void DS3231_SetClock(DS3231_ClockTypeDef *clock);
 void DS3231_SetDate(DS3231_DateTypeDef *date);
+
 void DS3231_SetAlarm1(uint8_t mode, DS3231_TimeTypeDef *time);
 void DS3231_SetAlarm2(uint8_t mode, DS3231_TimeTypeDef *time);
+
 void DS3231_TurnOnAlarm(uint8_t alarm);
 void DS3231_TurnOffAlarm(uint8_t alarm);
+
 FunctionalState DS3231_CheckAlarmEnabled(uint8_t alarm);
 FunctionalState DS3231_CheckIfAlarm(uint8_t alarm);
+
+float DS3231_GetTemperature(void);
 
 #endif /* __DS3231_H */

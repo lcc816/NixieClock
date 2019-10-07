@@ -269,6 +269,20 @@ FunctionalState DS3231_CheckIfAlarm(uint8_t alarm)
     return DISABLE;
 }
 
+/*******************************************************************************
+  * @brief  获取温度读数
+  * @param  None
+  * @retval 温度值
+*******************************************************************************/
+float DS3231_GetTemperature(void)
+{
+  uint8_t temp[2];
+  
+  I2c_Read_nByte(DS3231_ADDRESS, (uint8_t)0x11, 2, temp);
+
+	return (float)temp[0] + 0.25*(temp[1]>>6);
+}
+
 ////// 内部函数 //////
 
 // 控制寄存器 0x0E
