@@ -73,6 +73,17 @@ void HV57708_TubePower(FunctionalState NewState)
 }
 
 /*******************************************************************************
+  * @brief  获取辉光管电源开关状态
+  * @param  None
+  * @retval SET   = 辉光管打开
+  *         RESET = 辉光管关闭
+*******************************************************************************/
+FlagStatus HV57708_TubePowerStatus(void)
+{
+  return GPIO_ReadInputDataBit(GPIOB, GPIO_Pin_3);
+}
+
+/*******************************************************************************
   * @brief  向 HV57708 发送 64 位数据
   * @param  datapart1 - 第一部分数据, 32 位
   *         datapart2 - 第二部分数据, 32 位
@@ -200,7 +211,7 @@ void HV57708_Protection(void)
   {
     uint8_t data[6] = {i, i, i, i, i, i};
     HV57708_Display(data);
-    delay_ms(50);
+    delay_ms(75);
   }
   HV57708_SendData(0, 0);
   HV57708_OutputData();

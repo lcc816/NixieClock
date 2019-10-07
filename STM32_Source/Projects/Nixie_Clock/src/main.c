@@ -333,8 +333,15 @@ void key2_single_clicked_handler(void *key)
 {
 }
 
+/*******************************************************************************
+  * @brief  key2 长按, 开/关辉光管
+*******************************************************************************/
 void key2_long_pressed_handler(void *key)
 {
+  if (HV57708_TubePowerStatus())
+    HV57708_TubePower(DISABLE);
+  else 
+    HV57708_TubePower(ENABLE);
 }
 
 /**
