@@ -18,8 +18,8 @@
 
 void Display_Init(void);
 
-void Time_Display(Time_TypeDef *time);
-void Date_Display(Time_TypeDef *time);
+void Clock_Display(DS3231_ClockTypeDef *time);
+void Date_Display(DS3231_DateTypeDef *time);
 void TempOrHumi_Display(float value);
 
 #endif /* __DISPLAY_H */

@@ -25,7 +25,22 @@ typedef struct
   uint8_t hour;
   uint8_t minute;
   uint8_t second;
-} Time_TypeDef;
+} DS3231_TimeTypeDef;
+
+typedef struct 
+{
+  uint8_t hour;
+  uint8_t minute;
+  uint8_t second;
+} DS3231_ClockTypeDef;
+
+typedef struct 
+{
+  uint8_t year;
+  uint8_t month;
+  uint8_t date;
+  uint8_t day; // 星期和日期是联动的
+} DS3231_DateTypeDef;
 
 /* Exported constants --------------------------------------------------------*/
 /* Exported macro ------------------------------------------------------------*/
@@ -47,10 +62,14 @@ typedef struct
 #define  DayHourMinute        0x00 // 星期-时-分
 
 /* Exported functions ------------------------------------------------------- */
-Time_TypeDef DS3231_GetTime(void);
-void DS3231_SetTime(Time_TypeDef time);
-void DS3231_SetAlarm1(uint8_t mode, Time_TypeDef time);
-void DS3231_SetAlarm2(uint8_t mode, Time_TypeDef time);
+void DS3231_GetTime(DS3231_TimeTypeDef *time);
+void DS3231_GetClock(DS3231_ClockTypeDef *clock);
+void DS3231_GetDate(DS3231_DateTypeDef *date);
+void DS3231_SetTime(DS3231_TimeTypeDef *time);
+void DS3231_SetClock(DS3231_ClockTypeDef *clock);
+void DS3231_SetDate(DS3231_DateTypeDef *date);
+void DS3231_SetAlarm1(uint8_t mode, DS3231_TimeTypeDef *time);
+void DS3231_SetAlarm2(uint8_t mode, DS3231_TimeTypeDef *time);
 void DS3231_TurnOnAlarm(uint8_t alarm);
 void DS3231_TurnOffAlarm(uint8_t alarm);
 FunctionalState DS3231_CheckAlarmEnabled(uint8_t alarm);

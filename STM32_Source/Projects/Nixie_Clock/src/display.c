@@ -29,18 +29,18 @@ void Display_Init(void)
 }
 
 /*******************************************************************************
-* @brief    --> 时间显示, 时分秒
+* @brief    --> 时钟显示, 时分秒
 * @param    --> time - 指向要显示时间的结构体
 * @retval   --> None
 *******************************************************************************/
-void Time_Display(Time_TypeDef *time)
+void Clock_Display(DS3231_ClockTypeDef *clock)
 {
-  dis_data[5] = time->second % 10;
-  dis_data[4] = time->second / 10;
-  dis_data[3] = time->minute % 10;
-  dis_data[2] = time->minute / 10;
-  dis_data[1] = time->hour % 10;
-  dis_data[0] = time->hour / 10;
+  dis_data[5] = clock->second % 10;
+  dis_data[4] = clock->second / 10;
+  dis_data[3] = clock->minute % 10;
+  dis_data[2] = clock->minute / 10;
+  dis_data[1] = clock->hour % 10;
+  dis_data[0] = clock->hour / 10;
   
   /* 每秒闪烁冒号 */
   if (dis_data[5] != second_previous)
@@ -64,14 +64,14 @@ void Time_Display(Time_TypeDef *time)
 * @param    --> time - 指向要显示时间的结构体
 * @retval   --> None
 *******************************************************************************/
-void Date_Display(Time_TypeDef *time)
+void Date_Display(DS3231_DateTypeDef *date)
 {
-  dis_data[5] = time->date % 10;
-  dis_data[4] = time->date / 10;
-  dis_data[3] = time->month % 10;
-  dis_data[2] = time->month / 10;
-  dis_data[1] = time->year % 10;
-  dis_data[0] = time->year / 10;
+  dis_data[5] = date->date % 10;
+  dis_data[4] = date->date / 10;
+  dis_data[3] = date->month % 10;
+  dis_data[2] = date->month / 10;
+  dis_data[1] = date->year % 10;
+  dis_data[0] = date->year / 10;
   
   /* 不显示冒号 */
   Neon_AllOff();

@@ -24,59 +24,126 @@ void WriteStatusByte(uint8_t data);
 
 /*******************************************************************************
   * @brief  获取当前时间, 统一 24 小时制
-  * @param  None
-  * @retval 存储当前时间的结构体
+  * @param  time - 指向存储当前时间的结构体
+  * @retval None
 *******************************************************************************/
-Time_TypeDef DS3231_GetTime(void)
+void DS3231_GetTime(DS3231_TimeTypeDef *time)
 {
-  Time_TypeDef time;
   uint8_t buffer[7];
   
   /* 连续读取 7 个字节 */
   I2c_Read_nByte(DS3231_ADDRESS, (uint8_t)0x00, 7, buffer);
   
-  time.second = BcdToDec(buffer[0]);
-  time.minute = BcdToDec(buffer[1]);
+  time->second = BcdToDec(buffer[0]);
+  time->minute = BcdToDec(buffer[1]);
   /* 处理 12/24 小时制 */
   if ((buffer[2] & 0x40) == 0x40) // 12 小时制
   {
-    time.hour = BcdToDec(buffer[2] & 0x1F);
+    time->hour = BcdToDec(buffer[2] & 0x1F);
     if ((buffer[2] & 0x20) == 0x20) // PM
     {
-      time.hour += 12;
+      time->hour += 12;
     }
   }
   else
   {
-    time.hour = BcdToDec(buffer[2] & 0x3F);
+    time->hour = BcdToDec(buffer[2] & 0x3F);
   }
-  time.day = BcdToDec(buffer[3]);
-  time.date = BcdToDec(buffer[4]);
-  time.month = BcdToDec(buffer[5] & 0x7F);
-  time.year = BcdToDec(buffer[6]);
-  
-  return time;
+  time->day = BcdToDec(buffer[3]);
+  time->date = BcdToDec(buffer[4]);
+  time->month = BcdToDec(buffer[5] & 0x7F);
+  time->year = BcdToDec(buffer[6]);
 }
 
 /*******************************************************************************
-  * @brief  初始化 DS3231 计时寄存器
-  * @param  time 要设置的时间
+  * @brief  获取当前时钟读数(时, 分, 秒)
+  * @param  time - 指向存储当前时钟读数的结构体
   * @retval None
 *******************************************************************************/
-void DS3231_SetTime(Time_TypeDef time)
+void DS3231_GetClock(DS3231_ClockTypeDef *clock)
+{
+  uint8_t buffer[3];
+  
+  /* 连续读取存储日期的 3 个字节 */
+  I2c_Read_nByte(DS3231_ADDRESS, (uint8_t)0x00, 3, buffer);
+  
+  clock->second = BcdToDec(buffer[0]);
+  clock->minute = BcdToDec(buffer[1]);
+  clock->hour = BcdToDec(buffer[2]);
+}
+
+/*******************************************************************************
+  * @brief  获取当前日期
+  * @param  time - 指向存储当前日期的结构体
+  * @retval None
+*******************************************************************************/
+void DS3231_GetDate(DS3231_DateTypeDef *date)
+{
+  uint8_t buffer[4];
+  
+  /* 连续读取存储日期的 4 个字节 */
+  I2c_Read_nByte(DS3231_ADDRESS, (uint8_t)0x03, 4, buffer);
+  
+  date->day   = BcdToDec(buffer[0]);
+  date->date  = BcdToDec(buffer[1]);
+  date->month = BcdToDec(buffer[2]);
+  date->year  = BcdToDec(buffer[3]);
+}
+
+/*******************************************************************************
+  * @brief  设置 DS3231 所有计时寄存器
+  * @param  time - 指向要设置的时间的指针
+  * @retval None
+*******************************************************************************/
+void DS3231_SetTime(DS3231_TimeTypeDef *time)
 {
   uint8_t buffer[7];
 
-  buffer[0] = DecToBcd(time.second);
-  buffer[1] = DecToBcd(time.minute);
-  buffer[2] = DecToBcd(time.hour);
-  buffer[3] = DecToBcd(time.day);
-  buffer[4] = DecToBcd(time.date);
-  buffer[5] = DecToBcd(time.month);
-  buffer[6] = DecToBcd(time.year);
+  buffer[0] = DecToBcd(time->second);
+  buffer[1] = DecToBcd(time->minute);
+  buffer[2] = DecToBcd(time->hour);
+  buffer[3] = DecToBcd(time->day);
+  buffer[4] = DecToBcd(time->date);
+  buffer[5] = DecToBcd(time->month);
+  buffer[6] = DecToBcd(time->year);
   
   /* 连续写入 7 个字节 */
   I2c_Write_nByte(DS3231_ADDRESS, 0x00, 7, buffer);
+}
+
+/*******************************************************************************
+  * @brief  设置时, 分, 秒寄存器
+  * @param  clock - 指向要设置的时间的指针
+  * @retval None
+*******************************************************************************/
+void DS3231_SetClock(DS3231_ClockTypeDef *clock)
+{
+  uint8_t buffer[3];
+
+  buffer[0] = DecToBcd(clock->second);
+  buffer[1] = DecToBcd(clock->minute);
+  buffer[2] = DecToBcd(clock->hour);
+  
+  /* 连续写入 3 个字节 */
+  I2c_Write_nByte(DS3231_ADDRESS, 0x00, 3, buffer);
+}
+
+/*******************************************************************************
+  * @brief  设置日期寄存器
+  * @param  date - 指向要设置的日期的指针
+  * @retval None
+*******************************************************************************/
+void DS3231_SetDate(DS3231_DateTypeDef *date)
+{
+  uint8_t buffer[4];
+
+  buffer[0] = DecToBcd(date->day);
+  buffer[1] = DecToBcd(date->date);
+  buffer[2] = DecToBcd(date->month);
+  buffer[3] = DecToBcd(date->year);
+  
+  /* 连续写入 4 个字节 */
+  I2c_Write_nByte(DS3231_ADDRESS, 0x03, 4, buffer);
 }
 
 /*******************************************************************************
@@ -85,18 +152,18 @@ void DS3231_SetTime(Time_TypeDef time)
   *         time 要设置的时间
   * @retval None
 *******************************************************************************/
-void DS3231_SetAlarm1(uint8_t mode, Time_TypeDef time)
+void DS3231_SetAlarm1(uint8_t mode, DS3231_TimeTypeDef *time)
 {
   /* 闹钟 1 有连续 4 个寄存器, buffer[0] 存放起始地址 */
   uint8_t buffer[4];
-  buffer[0] = DecToBcd(time.second) | (mode & 0x01) << 7;
-  buffer[1] = DecToBcd(time.minute) | (mode & 0x02) << 6;
-  buffer[2] = DecToBcd(time.hour) | (mode & 0x04) << 5;
+  buffer[0] = DecToBcd(time->second) | (mode & 0x01) << 7;
+  buffer[1] = DecToBcd(time->minute) | (mode & 0x02) << 6;
+  buffer[2] = DecToBcd(time->hour) | (mode & 0x04) << 5;
   /* 按星期重复 or 日期重复 */
   if ((mode & 0x10) == 0x10)
-    buffer[3] = DecToBcd(time.day) | (mode & 0x08) << 4;
+    buffer[3] = DecToBcd(time->day) | (mode & 0x08) << 4;
   else
-    buffer[3] = DecToBcd(time.date) | (mode & 0x08) << 4;
+    buffer[3] = DecToBcd(time->date) | (mode & 0x08) << 4;
 
   I2c_Write_nByte(DS3231_ADDRESS, 0x07, 4, buffer);
 }
@@ -107,17 +174,17 @@ void DS3231_SetAlarm1(uint8_t mode, Time_TypeDef time)
   *         time 要设置的时间
   * @retval None
 *******************************************************************************/
-void DS3231_SetAlarm2(uint8_t mode, Time_TypeDef time)
+void DS3231_SetAlarm2(uint8_t mode, DS3231_TimeTypeDef *time)
 {
   /* 闹钟 2 有连续 3 个寄存器, buffer[0] 存放起始地址 */
   uint8_t buffer[3];
-  buffer[0] = DecToBcd(time.minute) | (mode & 0x01) << 7;
-  buffer[1] = DecToBcd(time.hour) | (mode & 0x02) << 6;
+  buffer[0] = DecToBcd(time->minute) | (mode & 0x01) << 7;
+  buffer[1] = DecToBcd(time->hour) | (mode & 0x02) << 6;
   /* 按星期重复 or 日期重复 */
   if ((mode & 0x08) == 0x08)
-    buffer[2] = DecToBcd(time.day) | (mode & 0x04) << 5;
+    buffer[2] = DecToBcd(time->day) | (mode & 0x04) << 5;
   else
-    buffer[2] = DecToBcd(time.date) | (mode & 0x04) << 5;
+    buffer[2] = DecToBcd(time->date) | (mode & 0x04) << 5;
   
   I2c_Write_nByte(DS3231_ADDRESS, 0x0B, 3, buffer);
 }

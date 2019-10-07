@@ -1,8 +1,8 @@
 /*******************************************************************************
 * @file     --> main.c
 * @author   --> Lichangchun
-* @version  --> 
-* @date     --> 19-Jun-2019
+* @version  --> V0.9
+* @date     --> 7-Oct-2019
 * @brief    -->
 *******************************************************************************/
   
@@ -11,11 +11,13 @@
 #include "usart.h"
 #include "i2c_soft.h"
 #include "led.h"
-#include "display.h"
 #include "ds3231.h"     // 高精度时钟
 #include "hv57708.h"    // 辉光管驱动
 #include "key.h"        // 按键驱动
 #include "buzzer.h"     // 蜂鸣器驱动
+#include "display.h"
+#include "multi_button.h"
+#include "timer.h"
 
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
@@ -23,54 +25,28 @@
 
 /* Private macro -------------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
-uint8_t       r=138;          // 彩灯颜色的 RGB 值
-uint8_t       g=43; 
-uint8_t       b=226;
-Time_TypeDef  time = {0};     // 记录当前时间
-float         temperature;    // 温度 摄氏度
-float         humidity;       // 湿度 %RH
-extern uint8_t       dis_data[6];    // 用于显示的数据暂存区
+uint8_t       r=138, g=43, b=226; // 彩灯颜色的 RGB 值
+
+struct Button key0, key1, key2;   // 实例化 3 个按键
 
 /* Private function prototypes -----------------------------------------------*/
+static uint8_t key0_pin_level(void);
+static uint8_t key1_pin_level(void);
+static uint8_t key2_pin_level(void);
+
+static void key0_single_clicked_handler(void *key);
+static void key0_long_pressed_handler(void *key);
+static void key1_single_clicked_handler(void *key);
+static void key1_long_pressed_handler(void *key);
+static void key2_single_clicked_handler(void *key);
+static void key2_long_pressed_handler(void *key);
+
+static void date2array(DS3231_DateTypeDef *date, uint8_t array[]);
+static void array2date(DS3231_DateTypeDef *date, uint8_t array[]);
+static void clock2array(DS3231_ClockTypeDef *clock, uint8_t array[]);
+static void array2clock(DS3231_ClockTypeDef *clock, uint8_t array[]);
+
 /* Private functions ---------------------------------------------------------*/
-
-/*******************************************************************************
-* @brief    --> Time 结构体转换成数组
-* @param    --> None
-* @retval   --> None
-*******************************************************************************/
-void time2array(uint8_t array[])
-{
-  array[0] = time.second % 10;
-  array[1] = time.second / 10;
-  array[2] = time.minute % 10;
-  array[3] = time.minute / 10;
-  array[4] = time.hour % 10;
-  array[5] = time.hour / 10;
-  
-  array[6] = time.date % 10;
-  array[7] = time.date / 10;
-  array[8] = time.month % 10;
-  array[9] = time.month / 10;
-  array[10] = time.year % 10;
-  array[11] = time.year / 10;
-}
-
-/*******************************************************************************
-* @brief    --> 用数组设置 Time 结构体
-* @param    --> None
-* @retval   --> None
-*******************************************************************************/
-void array2time(uint8_t array[])
-{
-  time.second = array[0] + array[1] * 10;
-  time.minute = array[2] + array[3] * 10;
-  time.hour = array[4] + array[5] * 10;
-  
-  time.date = array[6] + array[7] * 10;
-  time.month = array[8] + array[9] * 10;
-  time.year = array[10] + array[11] * 10;
-}
 
 /*******************************************************************************
   * @brief  主函数
@@ -79,185 +55,345 @@ void array2time(uint8_t array[])
 *******************************************************************************/
 int main(void)
 {
+  uint8_t       cnt = 0;
+  DS3231_ClockTypeDef clock = {0};
+  
   delay_init();
   NVIC_PriorityGroupConfig(NVIC_PriorityGroup_2); // 设置 NVIC 中断分组 2
 #ifdef SERIAL_DEBUG // 如果开启串口调试则初始化 USART1
   USART1_Configuration(115200);
 #endif
-  I2c_Init(); // 与实时时钟(DS3231)和温湿度传感器(SHT30)通信
-  
+  I2c_Init(); // 与实时时钟(DS3231)和温湿度传感器(SHT30)通信 
   LED_Init();
   LED_Off();
   //WS2812B_Init();
-  Display_Init();
   Buzzer_Init();
   Buzzer_Sound2(); // 嘀
-  KEY_Init();
   Display_Init();
   
-  uint8_t cnt = 0;
+  /* 按键相关初始化工作 - start */
+  Keys_GPIO_Init();
+  
+  button_init(&key0, key0_pin_level, KEY0_PRESS_LEVEL);
+  button_init(&key1, key1_pin_level, KEY1_PRESS_LEVEL);
+  button_init(&key2, key2_pin_level, KEY2_PRESS_LEVEL);
+  
+  button_attach(&key0, SINGLE_CLICK,      key0_single_clicked_handler); // key0 短按
+  button_attach(&key0, LONG_RRESS_START,  key0_long_pressed_handler); // key0 长按
+  button_attach(&key1, SINGLE_CLICK,      key1_single_clicked_handler);
+  button_attach(&key1, LONG_RRESS_START,  key1_long_pressed_handler);
+  button_attach(&key2, SINGLE_CLICK,      key2_single_clicked_handler);
+  button_attach(&key2, LONG_RRESS_START,  key2_long_pressed_handler);
+  
+  button_start(&key0);
+  button_start(&key1);
+  button_start(&key2);
+  
+  TIM4_Int_Init(35999, 9); // Timer4 用于 multi_button 的独立时间片轮转
+  
+  /* 按键相关初始化工作 - end */
   
   while(1)
   {
-    /* 重设彩灯颜色 */
-    //WS2812B_SetPixelRGBAll(r, g, b);
-    //WS2812B_Show();
-    
-    /* 检查按键状态 */
-    if (key0_long_flag) /* key0 长按, 进入设置 */
-    {
-      key0_long_flag = 0;
-    #ifdef SERIAL_DEBUG // 如果开启串口调试则初始化 USART1
-      printf("Setting...\r\n");
-    #endif
-      /* 进入设置模式后关闭按键的外部中断, 随后将采用普通扫描模式读取按键值 */
-      KEY_EXTI_ITConfig(KEY0_EXTI_Line | KEY1_EXTI_Line | KEY2_EXTI_Line, DISABLE);
-	  
-      /* 等待 KEY0 键释放, 重要, 否则会立即退出设置 */
-      while (KEY0 == KEY0_PRESS_LEVEL);
-      
-      uint8_t key_value; 
-      uint16_t null_cnt = 0;// 无按键计时, 每 10ms 递增
-      uint8_t blink = 0;    // 闪烁正在设置的位
-      uint8_t set_data[12]; // 存放正在设置的值
-      time2array(set_data);
-      uint8_t pt = 0;       // 指向当前正在设置的位
-      
-      while (1)
-      {
-        key_value = KEY_Scan();
-        /**************************
-        KEY0_PRESS: 保存并退出设置
-        KEY1_PRESS: 切换设置的位
-        KEY2_PRESS: 增加数值
-        0         : 连续 20s 无按键退出设置
-        **************************/
-        if (key_value == KEY0_PRESS)
-        {
-          array2time(set_data);
-          DS3231_SetTime(time);
-        #ifdef SERIAL_DEBUG
-          printf("Save and exit setting\r\n");
-        #endif
-          break; // 跳出循环
-        }
-        else if (key_value == KEY1_PRESS)
-        {
-          null_cnt = 0;
-          /* 等待弹起, 重要 */
-          while (KEY1 == KEY1_PRESS_LEVEL);
-        #ifdef SERIAL_DEBUG
-          printf("Move left\r\n");
-        #endif
-          pt++;
-          if (pt == 12)
-            pt = 0;
-        }
-        else if (key_value == KEY2_PRESS)
-        {
-          null_cnt = 0;
-          /* 等待弹起, 重要 */
-          while (KEY2 == KEY2_PRESS_LEVEL);
-        #ifdef SERIAL_DEBUG
-          printf("Increase\r\n");
-        #endif
-          set_data[pt]++;
-          if (set_data[pt] == 10)
-            set_data[pt] = 0;
-          
-        #ifdef SERIAL_DEBUG 
-          printf("%u%u-%u%u-%u%u %u%u:%u%u:%u%u\r\n",
-            set_data[11], set_data[10], set_data[9], set_data[8], set_data[7], set_data[6], \
-            set_data[5], set_data[4], set_data[3], set_data[2], set_data[1], set_data[0]);
-        #endif
-        }
-        else // 无按键按下
-        {
-          null_cnt++;
-          if (null_cnt > 2000)
-          {
-          #ifdef SERIAL_DEBUG 
-            printf("Exit without saving\r\n");
-          #endif
-            break;  // 跳出循环
-          }
-        }
-        
-        /* 正在设置的位闪烁标志 */
-        if (null_cnt % 50 == 0)
-        {
-          blink = !blink;
-        }
-        
-        /* 拷贝正在设置的段到显示暂存区 */
-        if (pt < 6) // 时间设置
-        {
-          for (uint8_t i = 0; i <= 5; i++)
-            dis_data[i] = set_data[i];
-          
-          if (blink)
-            dis_data[pt] = 10; // 大于 9 的数字将不显示, 从而制造闪烁
-        }
-        else        // 日期设置
-        {
-          for (uint8_t i = 0; i <= 5; i++)
-            dis_data[i] = set_data[6 + i];
-          
-          if (blink)
-            dis_data[pt-6] = 10; // 大于 9 的数字将不显示
-        }
-
-        HV57708_Display(dis_data); // 显示
-        delay_ms(10);
-      }
-      /* 退出设置前打开外部中断 */
-      KEY_EXTI_ITConfig(KEY0_EXTI_Line | KEY1_EXTI_Line | KEY2_EXTI_Line, ENABLE);
-    }
-    
-    if (key0_short_flag) /* key0 短按, 显示日期 */
-    {
-      key0_short_flag = 0;
-      Date_Display(&time);
-      /* 延时 3s */
-      delay_ms(1000);
-      delay_ms(1000);
-      delay_ms(1000);
-    }
-    
-    if (key1_short_flag) /* key1 短按, 显示温度 */
-    {
-      key1_short_flag = 0;
-    #ifdef SERIAL_DEBUG
-      printf("temperature:\r\n");
-    #endif
-       /* 延时 3s */
-      delay_ms(1000);
-      delay_ms(1000);
-      delay_ms(1000);
-    }
-      
-    if (key2_short_flag) /* key2 短按, 显示湿度 */
-    {
-      key2_short_flag = 0;
-    #ifdef SERIAL_DEBUG
-      printf("humidity:\r\n");
-    #endif
-       /* 延时 3s */
-      delay_ms(1000);
-      delay_ms(1000);
-      delay_ms(1000);
-    }
-    
-    /* 更新时间读数 */
-    time = DS3231_GetTime();
+    delay_ms(10);
+    /* 更新时钟读数 */
+    DS3231_GetClock(&clock);
     /* 默认显示时间 */
-    Time_Display(&time);
+    Clock_Display(&clock);
     cnt++;
     if (cnt == 50) // 每 500ms 翻转一次 LED
     {
       cnt = 0;
       LED_Flip();
     }
+  }
+}
+
+/*******************************************************************************
+  * @brief  返回 key0 的电平状态
+*******************************************************************************/
+uint8_t key0_pin_level(void)
+{
+  return KEY0;
+}
+
+/*******************************************************************************
+  * @brief  返回 key1 的电平状态
+*******************************************************************************/
+uint8_t key1_pin_level(void)
+{
+  return KEY1;
+}
+
+/*******************************************************************************
+  * @brief  返回 key2 的电平状态
+*******************************************************************************/
+uint8_t key2_pin_level(void)
+{
+  return KEY2;
+}
+
+/*******************************************************************************
+  * @brief  key0 单击事件, 显示日期
+*******************************************************************************/
+void key0_single_clicked_handler(void *key)
+{
+  DS3231_DateTypeDef date;
+  DS3231_GetDate(&date);
+  Date_Display(&date);
+  /* 延时 3s */
+  delay_ms(1000);
+  delay_ms(1000);
+  delay_ms(1000);
+}
+
+/*******************************************************************************
+  * @brief  key0 长按事件, 进入日期设置
+*******************************************************************************/
+void key0_long_pressed_handler(void *key)
+{
+  /* 进入设置后暂时关闭 Timer4, 随后将采用普通扫描模式读取按键值 */
+  TIM_Cmd(TIM4, DISABLE);
+  
+  
+  uint8_t             key_value; 
+  uint16_t            null_cnt = 0; // 无按键计时, 每 10ms 递增
+  uint8_t             blink = 0;    // 闪烁正在设置的位
+  uint8_t             set_data[6];  // 存放正在设置的值
+  uint8_t             dis_data[6];  // 显示暂存区
+  uint8_t             pt = 0;       // 指向当前正在设置的位
+  uint8_t             i;
+  DS3231_DateTypeDef  date;
+  
+  DS3231_GetDate(&date);
+  Date_Display(&date);
+  date2array(&date, set_data);
+  
+  /* 等待 KEY0 键释放, 重要, 否则会立即退出设置 */
+  while (KEY0 == KEY0_PRESS_LEVEL);
+  
+  while (1)
+  {
+    key_value = Keys_Scan();
+    /************************************
+    KEY0_PRESS: 保存并退出设置
+    KEY1_PRESS: 切换设置的位
+    KEY2_PRESS: 增加数值
+    0         : 连续 20s 无按键退出设置
+    ************************************/
+    if (key_value == KEY0_PRESS)
+    {
+      array2date(&date, set_data);
+      DS3231_SetDate(&date);
+      while (KEY1 == KEY1_PRESS_LEVEL);
+      break;
+    }
+    else if (key_value == KEY1_PRESS)
+    {
+      null_cnt = 0;
+      /* 等待弹起, 重要 */
+      while (KEY1 == KEY1_PRESS_LEVEL);
+      pt++;
+      if (pt == 6)
+        pt = 0;
+    }
+    else if (key_value == KEY2_PRESS)
+    {
+      null_cnt = 0;
+      /* 等待弹起, 重要 */
+      while (KEY2 == KEY2_PRESS_LEVEL);
+      set_data[pt]++;
+      if (set_data[pt] == 10)
+        set_data[pt] = 0;
+    }
+    else // 无按键按下
+    {
+      null_cnt++;
+      if (null_cnt > 2000)
+      {
+        break;
+      }
+    }
+    
+    /* 闪烁正在设置的位 */
+    if (null_cnt % 50 == 0)
+    {
+      blink = !blink;
+    }
+    
+    /* 拷贝正在设置的段到显示暂存区 */
+    for (i = 0; i < 6; i++)
+      dis_data[i] = set_data[i];
+      
+    if (blink)
+      dis_data[pt] = 11; // 大于 10 的数字将不显示
+    
+    HV57708_Display(dis_data); // 显示
     delay_ms(10);
   }
+  /* 退出前打开 Timer4, 启用多按键时间扫描 */
+  TIM_Cmd(TIM4, ENABLE);
+}
+
+/*******************************************************************************
+  * @brief  key1 单击事件, 显示温度
+*******************************************************************************/
+void key1_single_clicked_handler(void *key)
+{
+}
+
+/*******************************************************************************
+  * @brief  key1 长按事件, 进入时间设置
+*******************************************************************************/
+void key1_long_pressed_handler(void *key)
+{
+  /* 进入设置后暂时关闭 Timer4, 随后将采用普通扫描模式读取按键值 */
+  TIM_Cmd(TIM4, DISABLE);
+  
+  uint8_t             key_value; 
+  uint16_t            null_cnt = 0; // 无按键计时, 每 10ms 递增
+  uint8_t             blink = 0;    // 闪烁正在设置的位
+  uint8_t             set_data[6];  // 存放正在设置的值
+  uint8_t             dis_data[6];  // 显示暂存区
+  uint8_t             pt = 0;       // 指向当前正在设置的位
+  uint8_t             i;
+  DS3231_ClockTypeDef clock;
+  
+  DS3231_GetClock(&clock);
+  Clock_Display(&clock);
+  clock2array(&clock, set_data);
+  
+  /* 等待 KEY1 键释放, 否则会不断切换设置的位 */
+  while (KEY1 == KEY1_PRESS_LEVEL);
+  
+  while (1)
+  {
+    key_value = Keys_Scan();
+    /************************************
+    KEY0_PRESS: 保存并退出设置
+    KEY1_PRESS: 切换设置的位
+    KEY2_PRESS: 增加数值
+    0         : 连续 20s 无按键退出设置
+    ************************************/
+    if (key_value == KEY0_PRESS)
+    {
+      array2clock(&clock, set_data);
+      DS3231_SetClock(&clock);
+      while (KEY1 == KEY1_PRESS_LEVEL);
+      break;
+    }
+    else if (key_value == KEY1_PRESS)
+    {
+      null_cnt = 0;
+      /* 等待弹起, 重要 */
+      while (KEY1 == KEY1_PRESS_LEVEL);
+      pt++;
+      if (pt == 6)
+        pt = 0;
+    }
+    else if (key_value == KEY2_PRESS)
+    {
+      null_cnt = 0;
+      /* 等待弹起, 重要 */
+      while (KEY2 == KEY2_PRESS_LEVEL);
+      set_data[pt]++;
+      if (set_data[pt] == 10)
+        set_data[pt] = 0;
+    }
+    else // 无按键按下
+    {
+      null_cnt++;
+      if (null_cnt > 2000)
+      {
+        break;
+      }
+    }
+    
+    /* 闪烁正在设置的位 */
+    if (null_cnt % 50 == 0)
+    {
+      blink = !blink;
+    }
+    
+    /* 拷贝正在设置的段到显示暂存区 */
+    for (i = 0; i < 6; i++)
+      dis_data[i] = set_data[i];
+      
+    if (blink)
+      dis_data[pt] = 11; // 大于 10 的数字将不显示
+    
+    HV57708_Display(dis_data); // 显示
+    delay_ms(10);
+  }
+  /* 退出前打开 Timer4, 启用多按键时间扫描 */
+  TIM_Cmd(TIM4, ENABLE);
+}
+
+void key2_single_clicked_handler(void *key)
+{
+}
+
+void key2_long_pressed_handler(void *key)
+{
+}
+
+/**
+  * @brief  Timer4 中断. 每 5ms 调用一次 button_ticks().
+  * @param  None
+  * @retval None
+  */
+void TIM4_IRQHandler(void)
+{
+  if (TIM_GetITStatus(TIM4, TIM_IT_Update) != RESET)
+  {
+    TIM_ClearITPendingBit(TIM4, TIM_IT_Update);
+    
+    button_ticks();
+  }
+}
+
+/*******************************************************************************
+  * @brief Date 结构转换为数组
+*******************************************************************************/
+void date2array(DS3231_DateTypeDef *date, uint8_t array[])
+{
+  array[0] = date->year   / 10;
+  array[1] = date->year   % 10;
+  array[2] = date->month  / 10;
+  array[3] = date->month  % 10;
+  array[4] = date->date   / 10;
+  array[5] = date->date   % 10;
+}
+
+/*******************************************************************************
+  * @brief 数组转换为 Date 结构
+*******************************************************************************/
+void array2date(DS3231_DateTypeDef *date, uint8_t array[])
+{
+  date->year   = array[0] * 10 + array[1];
+  date->month = array[2] * 10 + array[3];
+  date->date = array[4] * 10 + array[5];
+}
+
+/*******************************************************************************
+  * @brief Clock 结构转换为数组
+*******************************************************************************/
+void clock2array(DS3231_ClockTypeDef *clock, uint8_t array[])
+{
+  array[0] = clock->hour    / 10;
+  array[1] = clock->hour    % 10;
+  array[2] = clock->minute  / 10;
+  array[3] = clock->minute  % 10;
+  array[4] = clock->second  / 10;
+  array[5] = clock->second  % 10;
+}
+
+/*******************************************************************************
+  * @brief 数组转换为 Clock 结构
+*******************************************************************************/
+void array2clock(DS3231_ClockTypeDef *clock, uint8_t array[])
+{
+  clock->hour   = array[0] * 10 + array[1];
+  clock->minute = array[2] * 10 + array[3];
+  clock->second = array[4] * 10 + array[5];
 }

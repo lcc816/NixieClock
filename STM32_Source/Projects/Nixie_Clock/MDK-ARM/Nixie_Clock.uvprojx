@@ -445,6 +445,11 @@
               <FileType>1</FileType>
               <FilePath>..\src\display.c</FilePath>
             </File>
+            <File>
+              <FileName>multi_button.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\src\multi_button.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
