@@ -19,6 +19,7 @@
 void Display_Init(void);
 
 void Clock_Display(DS3231_ClockTypeDef *time);
+void Clock_DisplayNoBlink(DS3231_ClockTypeDef *clock);
 void Date_Display(DS3231_DateTypeDef *time);
 void TempOrHumi_Display(float value);
 

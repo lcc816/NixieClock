@@ -162,9 +162,6 @@ void key0_long_pressed_handler(void *key)
   /* 进入设置后暂时关闭 Timer4, 随后将采用普通扫描模式读取按键值 */
   TIM_Cmd(TIM4, DISABLE);
   
-  /* 等待 KEY0 键释放, 重要, 否则会立即退出设置 */
-  while (KEY0 == KEY0_PRESS_LEVEL);
-  
   ret = select_setting_item(3);
   
   switch (ret)
@@ -330,7 +327,7 @@ void clock_setting(void)
   DS3231_ClockTypeDef clock;
   
   DS3231_GetClock(&clock);
-  Clock_Display(&clock);
+  Clock_DisplayNoBlink(&clock);
   clock2array(&clock, set_data);
   
   while (1)
@@ -460,13 +457,12 @@ int8_t select_setting_item(uint8_t total_items)
   uint16_t  null_cnt = 0; // 无按键计时, 每 10ms 递增
   uint8_t   blink = 0; // 闪烁标志
   
-  Neon_AllOff();
-  
   if (total_items > 6) total_items = 6;
   for (i = 0; i < total_items; i++)
   {
     sw[i] = i + 1;
   }
+  Neon_AllOff();
   HV57708_Display(sw);
   
   /* 等待 KEY0 键释放, 重要, 否则会立即选中 */

@@ -27,7 +27,7 @@ void Display_Init(void)
 
 /*******************************************************************************
 * @brief    --> 时钟显示, 时分秒
-* @param    --> time - 指向要显示时间的结构体
+* @param    --> clock - 指向要显示时间的结构体
 * @retval   --> None
 *******************************************************************************/
 void Clock_Display(DS3231_ClockTypeDef *clock)
@@ -61,8 +61,29 @@ void Clock_Display(DS3231_ClockTypeDef *clock)
 }
 
 /*******************************************************************************
+* @brief    --> 显示时钟, 但不用闪烁冒号和阴极保护
+* @param    --> clock - 指向要显示时间的结构体
+* @retval   --> None
+*******************************************************************************/
+void Clock_DisplayNoBlink(DS3231_ClockTypeDef *clock)
+{
+  uint8_t        dis_data[6];        // 用于显示的数据暂存区
+  
+  dis_data[5] = clock->second % 10;
+  dis_data[4] = clock->second / 10;
+  dis_data[3] = clock->minute % 10;
+  dis_data[2] = clock->minute / 10;
+  dis_data[1] = clock->hour % 10;
+  dis_data[0] = clock->hour / 10;
+  
+  HV57708_Display(dis_data);
+  
+  Neon_AllOn();
+}
+
+/*******************************************************************************
 * @brief    --> 日期显示, 年月日
-* @param    --> time - 指向要显示时间的结构体
+* @param    --> date - 指向要显示日期的结构体
 * @retval   --> None
 *******************************************************************************/
 void Date_Display(DS3231_DateTypeDef *date)
