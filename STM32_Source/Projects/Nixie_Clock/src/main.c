@@ -61,8 +61,9 @@ static void array2clock(DS3231_ClockTypeDef *clock, uint8_t array[]);
 *******************************************************************************/
 int main(void)
 {
-  uint8_t       cnt = 0;
+  uint8_t             cnt = 0;
   DS3231_ClockTypeDef clock = {0};
+  FlagStatus          sleep_flag = RESET;
   
   delay_init();
   NVIC_PriorityGroupConfig(NVIC_PriorityGroup_2); // 设置 NVIC 中断分组 2
@@ -104,8 +105,28 @@ int main(void)
     delay_ms(10);
     /* 更新时钟读数 */
     DS3231_GetClock(&clock);
-    /* 默认显示时间 */
-    Clock_Display(&clock);
+    /* 00:00 ~ 06:00 睡眠 */
+    if (clock.hour<=6)
+    {
+      if (sleep_flag != SET) 
+      {
+        /* 睡眠期间辉光管没必要显示 */
+        HV57708_TubePower(DISABLE);
+        sleep_flag = SET;
+      }
+      else /* 但手动打开辉光管仍可正常显示 */
+        Clock_Display(&clock);
+    }
+    else
+    {
+      if (sleep_flag != RESET)
+      {
+        HV57708_TubePower(ENABLE);
+        sleep_flag = RESET;
+      }
+      Clock_Display(&clock); /* 默认显示时间 */
+    }
+    
     cnt++;
     if (cnt == 50) // 每 500ms 翻转一次 LED
     {
