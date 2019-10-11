@@ -29,6 +29,9 @@
 uint8_t       r=138, g=43, b=226; // 彩灯颜色的 RGB 值
 
 struct Button key0, key1, key2;   // 实例化 3 个按键
+volatile FlagStatus a1_repeatable = RESET;  // 闹钟是否重复
+volatile FlagStatus a2_repeatable = RESET;
+volatile FlagStatus ring_flag = RESET;      // 闹铃是否响
 
 /* Private function prototypes -----------------------------------------------*/
 static uint8_t key0_pin_level(void);
@@ -46,6 +49,7 @@ static void date_setting(void);
 static void clock_setting(void);
 static void alarm_setting(void);
 static int8_t select_setting_item(uint8_t total_items);
+static void alarm_ring(void);
 
 static void date2array(DS3231_DateTypeDef *date, uint8_t array[]);
 static void array2date(DS3231_DateTypeDef *date, uint8_t array[]);
@@ -102,7 +106,24 @@ int main(void)
   
   while(1)
   {
-    delay_ms(10);
+    delay_ms(20);
+    /* 检查闹钟是否响 */
+    if (DS3231_CheckIfAlarm(1))
+    {
+      DS3231_GetClock(&clock);
+      Clock_Display(&clock);
+      alarm_ring();
+      if (!a1_repeatable) 
+        DS3231_TurnOffAlarm(1); /* 如果闹钟不需重复则关闭 */
+    }
+    if (DS3231_CheckIfAlarm(2))
+    {
+      DS3231_GetClock(&clock);
+      Clock_Display(&clock);
+      alarm_ring();
+      if (!a2_repeatable) 
+        DS3231_TurnOffAlarm(2); /* 如果闹钟不需重复则关闭 */
+    }
     /* 更新时钟读数 */
     DS3231_GetClock(&clock);
     /* 00:00 ~ 06:00 睡眠 */
@@ -128,7 +149,7 @@ int main(void)
     }
     
     cnt++;
-    if (cnt == 50) // 每 500ms 翻转一次 LED
+    if (cnt == 25) // 每 500ms 翻转一次 LED
     {
       cnt = 0;
       LED_Flip();
@@ -221,8 +242,15 @@ void key1_long_pressed_handler(void *key)
 {
 }
 
+/*******************************************************************************
+  * @brief  key2 单击事件, 关闭闹铃或...(todo)
+*******************************************************************************/
 void key2_single_clicked_handler(void *key)
 {
+  if (ring_flag)
+    ring_flag = RESET;
+  else
+    ;
 }
 
 /*******************************************************************************
@@ -417,6 +445,114 @@ void clock_setting(void)
 *******************************************************************************/
 void alarm_setting(void)
 {
+  uint8_t                     key_value; 
+  uint16_t                    null_cnt = 0; // 无按键计时, 每 10ms 递增
+  uint8_t                     blink = 0;    // 闪烁正在设置的位
+  uint8_t                     set_data[6];  // 存放正在设置的值
+  uint8_t                     dis_data[6];  // 显示暂存区
+  uint8_t                     pt = 0;       // 指向当前正在设置的位
+  uint8_t                     i, mode;
+  int8_t                      id;
+  static DS3231_ClockTypeDef  clock = {0};
+  DS3231_TimeTypeDef          temp;
+  
+  /* 选择要设置的闹钟 */
+  id = select_setting_item(2);
+  if (id!=1 && id!=2) return;
+  
+  /* 设置模式 */
+  /************************************
+      1: 仅一次
+      2: 重复
+      3: 清除闹钟
+  ************************************/
+  mode = select_setting_item(3);
+  if (mode!=1 && mode!=2 && mode!=3) return;
+  if (mode == 3)
+  {
+    DS3231_TurnOffAlarm(id);
+    return;
+  }
+  
+  Clock_DisplayNoBlink(&clock);
+  clock2array(&clock, set_data);
+  
+  while (1)
+  {
+    key_value = Keys_Scan();
+    /************************************
+    KEY0_PRESS: 保存闹钟并退出
+    KEY1_PRESS: 切换设置的位
+    KEY2_PRESS: 增加数值
+    0         : 连续 20s 无按键退出设置
+    ************************************/
+    if (key_value == KEY0_PRESS)
+    {
+      while (KEY0 == KEY0_PRESS_LEVEL);
+      array2clock(&clock, set_data);
+      
+      temp.hour   = clock.hour;
+      temp.minute = clock.minute;
+      temp.second = clock.second;
+      if (1 == id) /* 设置闹钟 1 */
+      {
+        DS3231_SetAlarm1(HourMinuteSecond, &temp);
+        DS3231_TurnOnAlarm(1);
+        if (1 == mode)  a1_repeatable = RESET;
+        else            a1_repeatable = SET;
+      }
+      else         /* 设置闹钟 2 */
+      {
+        DS3231_SetAlarm2(HourMinute, &temp);
+        DS3231_TurnOnAlarm(2);
+        if (1 == mode)  a2_repeatable = RESET;
+        else            a2_repeatable = SET;
+      }
+      break;
+    }
+    else if (key_value == KEY1_PRESS)
+    {
+      null_cnt = 0;
+      /* 等待弹起, 重要 */
+      while (KEY1 == KEY1_PRESS_LEVEL);
+      pt++;
+      if (pt == 6)
+        pt = 0;
+    }
+    else if (key_value == KEY2_PRESS)
+    {
+      null_cnt = 0;
+      /* 等待弹起, 重要 */
+      while (KEY2 == KEY2_PRESS_LEVEL);
+      set_data[pt]++;
+      if (set_data[pt] == 10)
+        set_data[pt] = 0;
+    }
+    else // 无按键按下
+    {
+      null_cnt++;
+      if (null_cnt > 2000)
+      {
+        break;
+      }
+    }
+    
+    /* 闪烁正在设置的位 */
+    if (null_cnt % 50 == 0)
+    {
+      blink = !blink;
+    }
+    
+    /* 拷贝正在设置的段到显示暂存区 */
+    for (i = 0; i < 6; i++)
+      dis_data[i] = set_data[i];
+      
+    if (blink)
+      dis_data[pt] = 11; // 大于 10 的数字将不显示
+    
+    HV57708_Display(dis_data); // 显示
+    delay_ms(10);
+  }
 }
 
 /*******************************************************************************
@@ -500,7 +636,7 @@ int8_t select_setting_item(uint8_t total_items)
     ************************************/
     if (key_value == KEY0_PRESS)
     {
-      while (KEY0 == KEY1_PRESS_LEVEL);
+      while (KEY0 == KEY0_PRESS_LEVEL);
       return pt;
     }
     else if (key_value == KEY1_PRESS)
@@ -513,7 +649,7 @@ int8_t select_setting_item(uint8_t total_items)
     }
     else if (key_value == KEY2_PRESS)
     {
-      while (KEY2 == KEY1_PRESS_LEVEL);
+      while (KEY2 == KEY2_PRESS_LEVEL);
       return -1; // 直接退出
     }
     else // 无按键按下
@@ -541,3 +677,16 @@ int8_t select_setting_item(uint8_t total_items)
   }
 }
 
+/*******************************************************************************
+  * @brief 闹钟响铃
+*******************************************************************************/
+void alarm_ring(void)
+{
+  
+  ring_flag = SET;
+  while (ring_flag != RESET)
+  {
+    Buzzer_Sound1();
+    delay_ms(1000);
+  }
+}

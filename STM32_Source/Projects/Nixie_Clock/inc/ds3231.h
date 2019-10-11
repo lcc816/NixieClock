@@ -77,7 +77,7 @@ void DS3231_TurnOnAlarm(uint8_t alarm);
 void DS3231_TurnOffAlarm(uint8_t alarm);
 
 FunctionalState DS3231_CheckAlarmEnabled(uint8_t alarm);
-FunctionalState DS3231_CheckIfAlarm(uint8_t alarm);
+FlagStatus DS3231_CheckIfAlarm(uint8_t alarm);
 
 float DS3231_GetTemperature(void);
 

@@ -161,7 +161,10 @@ void DS3231_SetAlarm1(uint8_t mode, DS3231_TimeTypeDef *time)
   buffer[2] = DecToBcd(time->hour) | (mode & 0x04) << 5;
   /* 按星期重复 or 日期重复 */
   if ((mode & 0x10) == 0x10)
+  {
     buffer[3] = DecToBcd(time->day) | (mode & 0x08) << 4;
+    buffer[3] |= 0x40;
+  }
   else
     buffer[3] = DecToBcd(time->date) | (mode & 0x08) << 4;
 
@@ -182,7 +185,10 @@ void DS3231_SetAlarm2(uint8_t mode, DS3231_TimeTypeDef *time)
   buffer[1] = DecToBcd(time->hour) | (mode & 0x02) << 6;
   /* 按星期重复 or 日期重复 */
   if ((mode & 0x08) == 0x08)
+  {
     buffer[2] = DecToBcd(time->day) | (mode & 0x04) << 5;
+    buffer[2] |= 0x40;
+  }
   else
     buffer[2] = DecToBcd(time->date) | (mode & 0x04) << 5;
   
@@ -243,9 +249,9 @@ FunctionalState DS3231_CheckAlarmEnabled(uint8_t alarm)
 /*******************************************************************************
   * @brief  检查闹钟是否响
   * @param  alarm 指定闹钟 1 or 2, 缺省为 2
-  * @retval ENABLE 响, DISABLE 未响
+  * @retval SET 响, RESET 未响
 *******************************************************************************/
-FunctionalState DS3231_CheckIfAlarm(uint8_t alarm)
+FlagStatus DS3231_CheckIfAlarm(uint8_t alarm)
 {
   uint8_t result = 0x00;
   uint8_t temp = ReadStatusByte();
@@ -264,9 +270,9 @@ FunctionalState DS3231_CheckIfAlarm(uint8_t alarm)
   WriteStatusByte(temp);
   
   if (result)
-    return ENABLE;
+    return SET;
   else
-    return DISABLE;
+    return RESET;
 }
 
 /*******************************************************************************
