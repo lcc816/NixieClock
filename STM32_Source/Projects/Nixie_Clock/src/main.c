@@ -8,7 +8,6 @@
   
 /* Includes ------------------------------------------------------------------*/
 #include "delay.h"
-#include "usart.h"
 #include "i2c_soft.h"
 #include "led.h"
 #include "ds3231.h"     // 高精度时钟
@@ -22,7 +21,6 @@
 
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
-//#define SERIAL_DEBUG    // 串口调试开关
 
 /* Private macro -------------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
@@ -71,9 +69,6 @@ int main(void)
   
   delay_init();
   NVIC_PriorityGroupConfig(NVIC_PriorityGroup_2); // 设置 NVIC 中断分组 2
-#ifdef SERIAL_DEBUG // 如果开启串口调试则初始化 USART1
-  USART1_Configuration(115200);
-#endif
   I2c_Init(); // 与实时时钟(DS3231)和温湿度传感器(SHT30)通信 
   LED_Init();
   LED_Off();
