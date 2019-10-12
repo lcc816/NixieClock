@@ -181,6 +181,9 @@ void HV57708_Display(uint8_t data[])
 {
   assert_param(data != NULL);
   
+  if (HV57708_TubePowerStatus() == RESET)
+    return;
+  
   uint32_t part2 = 0, part1 = 0;
   uint32_t pos[6];
   uint8_t i;
@@ -207,6 +210,9 @@ void HV57708_Display(uint8_t data[])
 *******************************************************************************/
 void HV57708_Protection(void)
 {
+  if (HV57708_TubePowerStatus() == RESET)
+    return;
+  
   for (uint8_t i = 0; i < 10; i++)
   {
     uint8_t data[6] = {i, i, i, i, i, i};

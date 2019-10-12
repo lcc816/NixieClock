@@ -196,6 +196,10 @@ void key0_single_clicked_handler(void *key)
 void key0_long_pressed_handler(void *key)
 {
   int8_t ret;
+  
+  if (HV57708_TubePowerStatus() == RESET)
+    return;
+  
   /* 进入设置后暂时关闭 Timer4, 随后将采用普通扫描模式读取按键值 */
   TIM_Cmd(TIM4, DISABLE);
   
