@@ -2,12 +2,12 @@
   ******************************************************************************
   * @file    ws2812b.h
   * @author  Lichangchun
-  * @version 0.1
-  * @date    2-Jun-2019
-  * @brief   
+  * @version 1.0
+  * @date    30-Jun-2021
+  * @brief
   ******************************************************************************
   */
-  
+
 /* Define to prevent recursive inclusion -------------------------------------*/
 #ifndef __WS2812B_H
 #define __WS2812B_H
@@ -21,7 +21,7 @@
 
 /* Exported define -----------------------------------------------------------*/
 // 灯珠数量定义
-#define WS2812B_NUM             6
+#define WS2812B_NUM             8
 
 /* Exported functions ------------------------------------------------------- */
 void WS2812B_Init(void);
@@ -37,6 +37,7 @@ void WS2812B_ColorWipe(uint32_t c, uint8_t wait);
 void WS2812B_Rainbow(uint8_t wait);
 void WS2812B_RainbowCycle(uint8_t wait);
 void WS2812B_TheaterChase(uint32_t c, uint8_t wait);
+void WS2812B_TheaterChaseRainbow(uint8_t wait);
 
 
 #endif /* __WS2812B_H */
