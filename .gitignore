@@ -27,6 +27,7 @@ settings/
 *.d
 *.lib
 *.crf
+*.scvd
 Objects/
 Listings/
 DebugConfig/
