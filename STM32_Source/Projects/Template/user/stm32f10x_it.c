@@ -1,6 +1,6 @@
 /**
   ******************************************************************************
-  * @file    Project/STM32F10x_StdPeriph_Template/stm32f10x_it.c 
+  * @file    stm32f10x_it.c
   * @author  MCD Application Team
   * @version V3.5.0
   * @date    08-April-2011
@@ -23,9 +23,6 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "stm32f10x_it.h"
-#include "usb_istr.h"
-#include "usb_lib.h"
-#include "usb_pwr.h"
 
 /** @addtogroup STM32F10x_StdPeriph_Template
   * @{
@@ -141,56 +138,10 @@ void SysTick_Handler(void)
 
 /******************************************************************************/
 /*                 STM32F10x Peripherals Interrupt Handlers                   */
-/*  在这里添加所用外围设备（PPP）的中断处理程序，有关可用的外设中断处理程序的 */
-/*  名称，请参阅启动文件（startup_stm32f10x_xx.s）                            */
+/*  Add here the Interrupt Handler for the used peripheral(s) (PPP), for the  */
+/*  available peripheral interrupt handler's name please refer to the startup */
+/*  file (startup_stm32f10x_xx.s).                                            */
 /******************************************************************************/
-
-/*******************************************************************************
-* Function Name  : USB_IRQHandler
-* Description    : 此函数处理USB低优先级中断
-*                  requests.
-* Input          : None
-* Output         : None
-* Return         : None
-*******************************************************************************/
-void USB_LP_CAN1_RX0_IRQHandler(void)
-{
-  USB_Istr();
-}
-
-/*******************************************************************************
-* Function Name  : USART1_IRQHandler
-* Description    : 此函数处理USART1全局中断请求.
-* Input          : None
-* Output         : None
-* Return         : None
-*******************************************************************************/
-void USART1_IRQHandler(void)
-{
-  if (USART_GetITStatus(USART1, USART_IT_RXNE) != RESET)
-  {
-    /* Send the received data to the PC Host*/
-    USART_To_USB_Send_Data();
-  }
-
-  /* 如果出现溢出情况, 清除ORE标志并恢复通信 */
-  if (USART_GetFlagStatus(USART1, USART_FLAG_ORE) != RESET)
-  {
-    (void)USART_ReceiveData(USART1);
-  }
-}
-
-/*******************************************************************************
-* Function Name  : USBWakeUp_IRQHandler
-* Description    : 此函数处理USB唤醒中断请求.
-* Input          : None
-* Output         : None
-* Return         : None
-*******************************************************************************/
-void USBWakeUp_IRQHandler(void)
-{
-  EXTI_ClearITPendingBit(EXTI_Line18);
-}
 
 /**
   * @brief  This function handles PPP interrupt request.

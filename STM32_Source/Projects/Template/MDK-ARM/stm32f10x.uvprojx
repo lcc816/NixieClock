@@ -187,7 +187,7 @@
             <hadIRAM2>0</hadIRAM2>
             <hadIROM2>0</hadIROM2>
             <StupSel>8</StupSel>
-            <useUlib>0</useUlib>
+            <useUlib>1</useUlib>
             <EndSel>0</EndSel>
             <uLtcg>0</uLtcg>
             <nSecure>0</nSecure>
@@ -336,7 +336,7 @@
               <MiscControls></MiscControls>
               <Define>STM32F10X_HD,USE_STDPERIPH_DRIVER</Define>
               <Undefine></Undefine>
-              <IncludePath>..\..\..\Libraries\CMSIS\Include;..\..\..\Libraries\CMSIS\Device\ST\STM32F10x\Include;..\inc;..\..\..\Libraries\STM32F10x_StdPeriph_Driver\inc</IncludePath>
+              <IncludePath>..\..\..\Libraries\CMSIS\Include;..\..\..\Libraries\CMSIS\Device\ST\STM32F10x\Include;..\..\..\Libraries\STM32F10x_StdPeriph_Driver\inc;..\user;..\delay;..\led;..\usart</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -378,31 +378,6 @@
       </TargetOption>
       <Groups>
         <Group>
-          <GroupName>User</GroupName>
-          <Files>
-            <File>
-              <FileName>delay.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\src\delay.c</FilePath>
-            </File>
-            <File>
-              <FileName>led.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\src\led.c</FilePath>
-            </File>
-            <File>
-              <FileName>main.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\src\main.c</FilePath>
-            </File>
-            <File>
-              <FileName>usart.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\src\usart.c</FilePath>
-            </File>
-          </Files>
-        </Group>
-        <Group>
           <GroupName>StdPeriph_Driver</GroupName>
           <Files>
             <File>
@@ -438,7 +413,7 @@
           </Files>
         </Group>
         <Group>
-          <GroupName>Startup</GroupName>
+          <GroupName>startup</GroupName>
           <Files>
             <File>
               <FileName>startup_stm32f10x_hd.s</FileName>
@@ -448,7 +423,59 @@
           </Files>
         </Group>
         <Group>
-          <GroupName>Doc</GroupName>
+          <GroupName>doc</GroupName>
+          <Files>
+            <File>
+              <FileName>readme.md</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\readme.md</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>user</GroupName>
+          <Files>
+            <File>
+              <FileName>main.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\user\main.c</FilePath>
+            </File>
+            <File>
+              <FileName>stm32f10x_it.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\user\stm32f10x_it.c</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>usart</GroupName>
+          <Files>
+            <File>
+              <FileName>usart.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\usart\usart.c</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>led</GroupName>
+          <Files>
+            <File>
+              <FileName>led.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\led\led.c</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>delay</GroupName>
+          <Files>
+            <File>
+              <FileName>delay.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\delay\delay.c</FilePath>
+            </File>
+          </Files>
         </Group>
       </Groups>
     </Target>
