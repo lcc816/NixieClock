@@ -62,7 +62,7 @@ void Keys_GPIO_Init(void)
 *******************************************************************************/
 uint8_t Keys_Scan(void)
 {
-    if (KEY0==KEY0_PRESS_LEVEL | KEY1==KEY1_PRESS_LEVEL | KEY2==KEY2_PRESS_LEVEL)
+    if (KEY0==KEY0_PRESS_LEVEL || KEY1==KEY1_PRESS_LEVEL || KEY2==KEY2_PRESS_LEVEL)
     {
         delay_ms(10);   // 去抖动
         if (KEY0 == KEY0_PRESS_LEVEL)

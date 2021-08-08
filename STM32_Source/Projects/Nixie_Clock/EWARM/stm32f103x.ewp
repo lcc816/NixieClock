@@ -349,10 +349,19 @@
                     <state>$PROJ_DIR$\..\..\..\Libraries\CMSIS\Device\ST\STM32F10x\Include</state>
                     <state>$PROJ_DIR$\..\..\..\Libraries\STM32F10x_StdPeriph_Driver\inc</state>
                     <state>$PROJ_DIR$\..\..\..\Libraries\CMSIS\Include</state>
+                    <state>$PROJ_DIR$\..\..\..\Libraries\MultiButton</state>
                     <state>$PROJ_DIR$\..\user</state>
                     <state>$PROJ_DIR$\..\delay</state>
                     <state>$PROJ_DIR$\..\led</state>
                     <state>$PROJ_DIR$\..\usart</state>
+                    <state>$PROJ_DIR$\..\buzzer</state>
+                    <state>$PROJ_DIR$\..\ds3231</state>
+                    <state>$PROJ_DIR$\..\hv57708</state>
+                    <state>$PROJ_DIR$\..\i2c_soft</state>
+                    <state>$PROJ_DIR$\..\key</state>
+                    <state>$PROJ_DIR$\..\neon</state>
+                    <state>$PROJ_DIR$\..\timer</state>
+                    <state>$PROJ_DIR$\..\ws2812b</state>
                 </option>
                 <option>
                     <name>CCStdIncCheck</name>
@@ -1044,13 +1053,43 @@
     <group>
         <name>drivers</name>
         <file>
+            <name>$PROJ_DIR$\..\buzzer\buzzer.c</name>
+        </file>
+        <file>
             <name>$PROJ_DIR$\..\delay\delay.c</name>
+        </file>
+        <file>
+            <name>$PROJ_DIR$\..\ds3231\ds3231.c</name>
+        </file>
+        <file>
+            <name>$PROJ_DIR$\..\hv57708\hv57708.c</name>
+        </file>
+        <file>
+            <name>$PROJ_DIR$\..\i2c_soft\i2c_soft.c</name>
+        </file>
+        <file>
+            <name>$PROJ_DIR$\..\key\key.c</name>
         </file>
         <file>
             <name>$PROJ_DIR$\..\led\led.c</name>
         </file>
         <file>
+            <name>$PROJ_DIR$\..\neon\neon.c</name>
+        </file>
+        <file>
+            <name>$PROJ_DIR$\..\timer\timer.c</name>
+        </file>
+        <file>
             <name>$PROJ_DIR$\..\usart\usart.c</name>
+        </file>
+        <file>
+            <name>$PROJ_DIR$\..\ws2812b\ws2812b.c</name>
+        </file>
+    </group>
+    <group>
+        <name>MultiButton</name>
+        <file>
+            <name>$PROJ_DIR$\..\..\..\Libraries\MultiButton\multi_button.c</name>
         </file>
     </group>
     <group>
@@ -1155,9 +1194,6 @@
             </file>
             <file>
                 <name>$PROJ_DIR$\..\..\..\Libraries\STM32F10x_StdPeriph_Driver\src\stm32f10x_dma.c</name>
-                <excluded>
-                    <configuration>Debug</configuration>
-                </excluded>
             </file>
             <file>
                 <name>$PROJ_DIR$\..\..\..\Libraries\STM32F10x_StdPeriph_Driver\src\stm32f10x_exti.c</name>
@@ -1215,15 +1251,9 @@
             </file>
             <file>
                 <name>$PROJ_DIR$\..\..\..\Libraries\STM32F10x_StdPeriph_Driver\src\stm32f10x_spi.c</name>
-                <excluded>
-                    <configuration>Debug</configuration>
-                </excluded>
             </file>
             <file>
                 <name>$PROJ_DIR$\..\..\..\Libraries\STM32F10x_StdPeriph_Driver\src\stm32f10x_tim.c</name>
-                <excluded>
-                    <configuration>Debug</configuration>
-                </excluded>
             </file>
             <file>
                 <name>$PROJ_DIR$\..\..\..\Libraries\STM32F10x_StdPeriph_Driver\src\stm32f10x_usart.c</name>
@@ -1238,6 +1268,9 @@
     </group>
     <group>
         <name>user</name>
+        <file>
+            <name>$PROJ_DIR$\..\user\display.c</name>
+        </file>
         <file>
             <name>$PROJ_DIR$\..\user\main.c</name>
         </file>
