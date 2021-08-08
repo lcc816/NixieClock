@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <projectDescription>
-	<name>Template</name>
+	<name>NixieClock</name>
 	<comment></comment>
 	<projects>
 	</projects>
@@ -22,19 +22,27 @@
 		<nature>org.eclipse.cdt.core.cnature</nature>
 		<nature>org.eclipse.cdt.managedbuilder.core.managedBuildNature</nature>
 		<nature>org.eclipse.cdt.managedbuilder.core.ScannerConfigNature</nature>
-		<nature>fr.ac6.mcu.ide.core.MCUProjectNature</nature>
 	</natures>
 	<linkedResources>
 		<link>
-			<name>Libraries</name>
+			<name>MultiButton</name>
 			<type>2</type>
-			<locationURI>Libraries</locationURI>
+			<locationURI>$%7BPARENT-2-PROJECT_LOC%7D/Libraries/MultiButton</locationURI>
+		</link>
+		<link>
+			<name>Startup</name>
+			<type>2</type>
+			<locationURI>PARENT-2-PROJECT_LOC/Libraries/CMSIS/Device/ST/STM32F10x/Source/Templates/TrueSTUDIO</locationURI>
+		</link>
+		<link>
+			<name>StdPeriph</name>
+			<type>2</type>
+			<locationURI>PARENT-2-PROJECT_LOC/Libraries/STM32F10x_StdPeriph_Driver/src</locationURI>
+		</link>
+		<link>
+			<name>Startup/system_stm32f10x.c</name>
+			<type>1</type>
+			<locationURI>PARENT-2-PROJECT_LOC/Libraries/CMSIS/Device/ST/STM32F10x/Source/Templates/system_stm32f10x.c</locationURI>
 		</link>
 	</linkedResources>
-	<variableList>
-		<variable>
-			<name>Libraries</name>
-			<value>$%7BPARENT-2-PROJECT_LOC%7D/Libraries</value>
-		</variable>
-	</variableList>
 </projectDescription>
