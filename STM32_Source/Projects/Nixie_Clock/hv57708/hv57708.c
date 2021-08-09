@@ -40,9 +40,10 @@ void HV57708_Init(void)
     GPIO_Init(GPIOB, &GPIO_InitStructure);
     /* 辉光管电源开关 */
     /* PB3 复位后功能为 JTDO, 需重映射为普通 IO */
-    RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOB | RCC_APB2Periph_AFIO, ENABLE);
-    GPIO_PinRemapConfig(GPIO_Remap_SWJ_JTAGDisable, ENABLE); // JTAG-DP 关闭, SW-DP 使能
-    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_3;
+    //RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOB | RCC_APB2Periph_AFIO, ENABLE);
+    //GPIO_PinRemapConfig(GPIO_Remap_SWJ_JTAGDisable, ENABLE); // JTAG-DP 关闭, SW-DP 使能
+    /* 新版 PCB（V2.1）改到 PB7 */
+    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_7;
     GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP; // 推挽输出
     GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz; // 速度50MHZ
     GPIO_Init(GPIOB, &GPIO_InitStructure);
@@ -68,9 +69,9 @@ void HV57708_Init(void)
 void HV57708_TubePower(FunctionalState NewState)
 {
     if (NewState != DISABLE)
-        GPIO_SetBits(GPIOB, GPIO_Pin_3); /* 打开 */
+        GPIO_SetBits(GPIOB, GPIO_Pin_7); /* 打开 */
     else
-        GPIO_ResetBits(GPIOB, GPIO_Pin_3);
+        GPIO_ResetBits(GPIOB, GPIO_Pin_7);
 }
 
 /*******************************************************************************
@@ -81,7 +82,7 @@ void HV57708_TubePower(FunctionalState NewState)
 *******************************************************************************/
 FlagStatus HV57708_TubePowerStatus(void)
 {
-    return (FlagStatus)GPIO_ReadInputDataBit(GPIOB, GPIO_Pin_3);
+    return (FlagStatus)GPIO_ReadInputDataBit(GPIOB, GPIO_Pin_7);
 }
 
 /*******************************************************************************
