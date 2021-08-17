@@ -48,6 +48,25 @@ typedef struct
 /* DS3231 的 I2C 地址 */
 #define DS3231_ADDRESS      0x68
 
+/* DS3231 中断相关参数 */
+#define DS3231_SQW_PIN          GPIO_Pin_9
+#define DS3231_SQW_PORT         GPIOC
+#define DS3231_SQW_CLK          RCC_APB2Periph_GPIOC
+#define DS3231_EXTI_LINE        EXTI_Line9
+#define DS3231_EXTI_PORT_SOURCE GPIO_PortSourceGPIOC
+#define DS3231_EXTI_PIN_SOURCE  GPIO_PinSource9
+#define DS3231_EXTI_IRQHandler  EXTI9_5_IRQHandler
+#define DS3231_EXTI_IRQ         EXTI9_5_IRQn
+
+#define DS3231_SQW_LEVEL    GPIO_ReadInputDataBit(DS3231_SQW_PORT, DS3231_SQW_PIN)
+
+typedef enum {
+    EDGE_RISING = 0,
+    EDGE_FALLING
+} EdgeEvent;
+
+typedef void (*DS3231_SqwCallback)(EdgeEvent edge);
+
 /* 闹钟屏蔽位 */
 #define  OncePerSecond          0x0F // 每秒
 #define  SecondMatch            0x0E // 秒
@@ -61,7 +80,22 @@ typedef struct
 #define  DateHourMinute       0x08 // 日期-时-分
 #define  DayHourMinute        0x00 // 星期-时-分
 
+#define IS_MODE_ALARM1(mode)    ((mode == OncePerSecond) || \
+                                 (mode == SecondMatch) || \
+                                 (mode == MinuteSecond) || \
+                                 (mode == HourMinuteSecond) || \
+                                 (mode == DateHourMinuteSecond) || \
+                                 (mode == DayHourMinuteSecond))
+
+#define IS_MODE_ALARM2(mode)    ((mode == OncePerMinute) || \
+                                 (mode == MinuteMatch) || \
+                                 (mode == HourMinute) || \
+                                 (mode == DateHourMinute) || \
+                                 (mode == DayHourMinute))
+
 /* Exported functions ------------------------------------------------------- */
+void DS3231_Init(void);
+void DS3231_BindSquareWaveHandler(DS3231_SqwCallback callback);
 void DS3231_GetTime(DS3231_TimeTypeDef *time);
 void DS3231_GetClock(DS3231_ClockTypeDef *clock);
 void DS3231_GetDate(DS3231_DateTypeDef *date);
@@ -72,12 +106,13 @@ void DS3231_SetDate(DS3231_DateTypeDef *date);
 
 void DS3231_SetAlarm1(uint8_t mode, DS3231_TimeTypeDef *time);
 void DS3231_SetAlarm2(uint8_t mode, DS3231_TimeTypeDef *time);
+void DS3231_SetAlarm(uint8_t alarm, uint8_t mode, DS3231_TimeTypeDef *time);
 
-void DS3231_TurnOnAlarm(uint8_t alarm);
-void DS3231_TurnOffAlarm(uint8_t alarm);
+void DS3231_TurnOnoffAlarm(uint8_t alarm, FunctionalState onoff);
 
 FunctionalState DS3231_CheckAlarmEnabled(uint8_t alarm);
 FlagStatus DS3231_CheckIfAlarm(uint8_t alarm);
+FlagStatus DS3231_CheckIfAlarmAny(void);
 
 float DS3231_GetTemperature(void);
 

@@ -22,6 +22,75 @@ void WriteControlByte(uint8_t data);
 uint8_t ReadStatusByte(void);
 void WriteStatusByte(uint8_t data);
 
+static DS3231_SqwCallback sqw_callback = NULL;
+
+void DS3231_BindSquareWaveHandler(DS3231_SqwCallback callback)
+{
+    sqw_callback = callback;
+}
+
+/*******************************************************************************
+  * @brief  DS3231 引脚初始化，设置外部中断等
+  * @param  None
+  * @retval None
+*******************************************************************************/
+void DS3231_Init(void)
+{
+    uint8_t temp;
+    GPIO_InitTypeDef GPIO_InitStructure;
+    EXTI_InitTypeDef EXTI_InitStructure;
+    NVIC_InitTypeDef NVIC_InitStructure;
+    /* 使能端口时钟 */
+    RCC_APB2PeriphClockCmd(DS3231_SQW_CLK, ENABLE);
+    RCC_APB2PeriphClockCmd(RCC_APB2Periph_AFIO, ENABLE);
+    /* GPIO 配置 */
+    GPIO_InitStructure.GPIO_Pin = DS3231_SQW_PIN;
+    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN_FLOATING;
+    GPIO_Init(DS3231_SQW_PORT, &GPIO_InitStructure);
+
+    /* 外部中断配置 */
+    GPIO_EXTILineConfig(DS3231_EXTI_PORT_SOURCE, DS3231_EXTI_PIN_SOURCE);
+    EXTI_InitStructure.EXTI_Line = DS3231_EXTI_LINE;
+    EXTI_InitStructure.EXTI_Mode = EXTI_Mode_Interrupt;
+    EXTI_InitStructure.EXTI_Trigger = EXTI_Trigger_Rising_Falling; // 双边沿触发
+    EXTI_InitStructure.EXTI_LineCmd = ENABLE;
+    EXTI_Init(&EXTI_InitStructure);
+
+    /* 使能中断通道 */
+    NVIC_InitStructure.NVIC_IRQChannel = DS3231_EXTI_IRQ;
+    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0x02;
+    NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0x02;
+    NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
+    NVIC_Init(&NVIC_InitStructure);
+
+    /* !!note 上电后将控制寄存器的 INTCN 位清零，使 DS3231 输出 1Hz 方波 */
+    temp = ReadControlByte();
+    /* INTCN 置 0 使能方波输出，RS[2:1] 置为 00 设置方波为 1Hz */
+    temp &= ~0x1C;
+    WriteControlByte(temp);
+}
+
+/*******************************************************************************
+  * @brief  DS3231 外部中断处理函数。
+  *         DS3231 的 SQW 引脚输出 1Hz 方波，设置外部中断双边沿触发，理论上 500ms 中断一次。
+  *         中断发生时，通过读引脚电平判断是由上升沿还是下降沿触发
+  * @param  None
+  * @retval None
+*******************************************************************************/
+void DS3231_EXTI_IRQHandler(void)
+{
+    if (EXTI_GetITStatus(DS3231_EXTI_LINE) == SET)
+    {
+        if (sqw_callback != NULL)
+        {
+            EdgeEvent edge = DS3231_SQW_LEVEL == 0 ? EDGE_FALLING : EDGE_RISING;
+            sqw_callback(edge);
+        }
+        /* 清除中断标志以等待下一次中断 */
+        EXTI_ClearITPendingBit(DS3231_EXTI_LINE);
+    }
+}
+
 /*******************************************************************************
   * @brief  获取当前时间, 统一 24 小时制
   * @param  time - 指向存储当前时间的结构体
@@ -149,13 +218,17 @@ void DS3231_SetDate(DS3231_DateTypeDef *date)
 /*******************************************************************************
   * @brief  设置闹钟 1, 可设置到 秒
   * @param  mode 闹钟模式
-  *         time 要设置的时间
+  * @param  time 要设置的时间
   * @retval None
 *******************************************************************************/
 void DS3231_SetAlarm1(uint8_t mode, DS3231_TimeTypeDef *time)
 {
     /* 闹钟 1 有连续 4 个寄存器, buffer[0] 存放起始地址 */
     uint8_t buffer[4];
+
+    if (!IS_MODE_ALARM1(mode))
+        return;
+
     buffer[0] = DecToBcd(time->second) | (mode & 0x01) << 7;
     buffer[1] = DecToBcd(time->minute) | (mode & 0x02) << 6;
     buffer[2] = DecToBcd(time->hour) | (mode & 0x04) << 5;
@@ -174,13 +247,17 @@ void DS3231_SetAlarm1(uint8_t mode, DS3231_TimeTypeDef *time)
 /*******************************************************************************
   * @brief  设置闹钟 2, 可设置到 分
   * @param  mode 闹钟模式
-  *         time 要设置的时间
+  * @param  time 要设置的时间
   * @retval None
 *******************************************************************************/
 void DS3231_SetAlarm2(uint8_t mode, DS3231_TimeTypeDef *time)
 {
     /* 闹钟 2 有连续 3 个寄存器, buffer[0] 存放起始地址 */
     uint8_t buffer[3];
+
+    if (!IS_MODE_ALARM2(mode))
+        return;
+
     buffer[0] = DecToBcd(time->minute) | (mode & 0x01) << 7;
     buffer[1] = DecToBcd(time->hour) | (mode & 0x02) << 6;
     /* 按星期重复 or 日期重复 */
@@ -196,83 +273,103 @@ void DS3231_SetAlarm2(uint8_t mode, DS3231_TimeTypeDef *time)
 }
 
 /*******************************************************************************
-  * @brief  打开闹钟
-  * @param  alarm 闹钟 1 or 2, 缺省为 2
+  * @brief  设置闹钟
+  * @param  alarm 闹钟 1 或 2
+  * @param  mode 闹钟模式
+  * @param  time 要设置的时间
   * @retval None
 *******************************************************************************/
-void DS3231_TurnOnAlarm(uint8_t alarm)
+void DS3231_SetAlarm(uint8_t alarm, uint8_t mode, DS3231_TimeTypeDef *time)
 {
-    uint8_t temp = ReadControlByte();
-    if (alarm == 1)
-        temp |= 0x05;
+    if ((1 != alarm) && (2 != alarm))
+        return;
+
+    if (1 == alarm)
+        DS3231_SetAlarm1(mode, time);
     else
-        temp |= 0x06;
-    WriteControlByte(temp);
+        DS3231_SetAlarm2(mode, time);
 }
 
 /*******************************************************************************
-  * @brief  关闭闹钟
-  * @param  alarm 闹钟 1 or 2, 缺省为 2
+  * @brief  使能或取消闹钟（但不使能中断）
+  * @param  alarm 闹钟 1 or 2
+  * @param  onoff 使能（ENABLE）或取消（DISABLE）
   * @retval None
 *******************************************************************************/
-void DS3231_TurnOffAlarm(uint8_t alarm)
+void DS3231_TurnOnoffAlarm(uint8_t alarm, FunctionalState onoff)
 {
-    uint8_t temp = ReadControlByte();
-    if (alarm == 1)
-        temp &= 0xFE;
+    uint8_t temp;
+
+    if ((1 != alarm) && (2 != alarm))
+        return;
+
+    temp = ReadControlByte();
+    if (ENABLE == onoff)
+        temp |= (0x01 << (alarm - 1));
     else
-        temp &= 0xFD;
+        temp &= ~(0x01 << (alarm - 1));
     WriteControlByte(temp);
 }
 
 /*******************************************************************************
   * @brief  检查指定闹钟是否开启
-  * @param  alarm 指定闹钟 1 or 2, 缺省为 2
+  * @param  alarm 指定闹钟 1 or 2
   * @retval ENABLE 开启, DISABLE 未开启
 *******************************************************************************/
 FunctionalState DS3231_CheckAlarmEnabled(uint8_t alarm)
 {
     uint8_t result = 0x00;
-    uint8_t temp = ReadControlByte();
+    uint8_t temp = 0;
 
-    if (alarm == 1)
-        result = temp & 0x01;
-    else
-        result = temp & 0x02;
-
-    if (result)
-        return ENABLE;
-    else
+    if ((1 != alarm) && (2 != alarm))
         return DISABLE;
+
+    temp = ReadControlByte();
+    result = temp & (0x01 << (alarm - 1));
+
+    return (0x00 != result) ? ENABLE : DISABLE;
 }
 
 /*******************************************************************************
-  * @brief  检查闹钟是否响
-  * @param  alarm 指定闹钟 1 or 2, 缺省为 2
+  * @brief  检查指定闹钟是否响
+  * @param  alarm 指定闹钟 1 or 2
   * @retval SET 响, RESET 未响
 *******************************************************************************/
 FlagStatus DS3231_CheckIfAlarm(uint8_t alarm)
 {
     uint8_t result = 0x00;
-    uint8_t temp = ReadStatusByte();
-    /* 判断哪个闹钟响 */
-    if (alarm == 1)
-    {
-        result = temp & 0x01;
-        temp &= 0xFE;
-    }
-    else
-    {
-        result = temp & 0x02;
-        temp &= 0xFD;
-    }
+    uint8_t temp = 0;
+
+    if ((1 != alarm) && (2 != alarm))
+        return RESET;
+
+    temp = ReadStatusByte();
+    result = temp & (0x01 << (alarm - 1));
+    temp |= ~result;
+
     /* 清除闹钟标志 */
     WriteStatusByte(temp);
 
-    if (result)
-        return SET;
-    else
-        return RESET;
+    return (0x00 != result) ? SET : RESET;
+}
+
+/*******************************************************************************
+  * @brief  检查是否有任意一个闹钟响
+  * @param  None
+  * @retval SET 响, RESET 未响
+*******************************************************************************/
+FlagStatus DS3231_CheckIfAlarmAny(void)
+{
+    uint8_t result = 0x00;
+    uint8_t temp = ReadStatusByte();
+
+    temp = ReadStatusByte();
+    result = temp & 0x3;
+    temp &= ~result;
+    /* 清除闹钟标志 */
+    WriteStatusByte(temp);
+
+    return (0x00 != result) ? SET : RESET;
 }
 
 /*******************************************************************************
@@ -291,7 +388,13 @@ float DS3231_GetTemperature(void)
 
 ////// 内部函数 //////
 
-// 控制寄存器 0x0E
+/* 控制寄存器 0x0E
+ |      bit |  7   |   6   |  5   |  4  |  3  |   2   |  1   |  0   |
+ +----------+------+-------+------+-----+-----+-------+------+------+
+ |     name | EOSC | BBSQW | CONV | RS2 | RS1 | INTCN | A2IE | A1IE |
+ +----------+------+-------+------+-----+-----+-------+------+------+
+ | pwoer-on |  0   |   0   |  0   |  1  |  1  |   1   |  0   |  0   |
+ */
 uint8_t ReadControlByte(void)
 {
     uint8_t val;
@@ -304,7 +407,13 @@ void WriteControlByte(uint8_t data)
     I2c_Write_1Byte(DS3231_ADDRESS, 0x0E, data);
 }
 
-// 状态寄存器 0x0F
+/* 状态寄存器 0x0F
+ |      bit |  7  | 6 | 5 | 4 |    3    |  2  |  1  |  0  |
+ +----------+-----+---+---+---+---------+-----+-----+-----+
+ |     name | OSF | - | - | - | EN32KHZ | BSY | A2F | A1F |
+ +----------+-----+---+---+---+---------+-----+-----+-----+
+ | pwoer-on |  1  | 0 | 0 | 0 |    1    |  X  |  X  |  X  |
+ */
 uint8_t ReadStatusByte(void)
 {
     uint8_t val;

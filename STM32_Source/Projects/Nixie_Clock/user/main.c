@@ -54,6 +54,8 @@ static void array2date(DS3231_DateTypeDef *date, uint8_t array[]);
 static void clock2array(DS3231_ClockTypeDef *clock, uint8_t array[]);
 static void array2clock(DS3231_ClockTypeDef *clock, uint8_t array[]);
 
+void clock_half_second_handler(EdgeEvent edge);
+
 /* Private functions ---------------------------------------------------------*/
 
 /*******************************************************************************
@@ -63,10 +65,6 @@ static void array2clock(DS3231_ClockTypeDef *clock, uint8_t array[]);
 *******************************************************************************/
 int main(void)
 {
-    uint8_t             cnt = 0;
-    DS3231_ClockTypeDef clock = {0};
-    FlagStatus          sleep_flag = RESET;
-
     delay_init();
     NVIC_PriorityGroupConfig(NVIC_PriorityGroup_2); // 设置 NVIC 中断分组 2
     I2c_Init(); // 与实时时钟(DS3231)和温湿度传感器(SHT30)通信
@@ -76,6 +74,9 @@ int main(void)
     Buzzer_Init();
     Buzzer_Sound2(); // 嘀
     Display_Init();
+
+    DS3231_Init();
+    DS3231_BindSquareWaveHandler(clock_half_second_handler);
 
     /* 按键相关初始化工作 - start */
     Keys_GPIO_Init();
@@ -102,54 +103,64 @@ int main(void)
     while(1)
     {
         delay_ms(20);
-        /* 检查闹钟是否响 */
-        if (DS3231_CheckIfAlarm(1))
-        {
-            DS3231_GetClock(&clock);
-            Clock_Display(&clock);
-            alarm_ring();
-            if (!a1_repeatable)
-                DS3231_TurnOffAlarm(1); /* 如果闹钟不需重复则关闭 */
-        }
-        if (DS3231_CheckIfAlarm(2))
-        {
-            DS3231_GetClock(&clock);
-            Clock_Display(&clock);
-            alarm_ring();
-            if (!a2_repeatable)
-                DS3231_TurnOffAlarm(2); /* 如果闹钟不需重复则关闭 */
-        }
-        /* 更新时钟读数 */
+    }
+}
+
+/*******************************************************************************
+  * @brief  时钟 1Hz 方波上下沿的中断处理函数（500ms中断一次）
+  * @param  edge 标志上下沿
+  * @retval None
+*******************************************************************************/
+void clock_half_second_handler(EdgeEvent edge)
+{
+    static DS3231_ClockTypeDef clock = {0};
+    static FlagStatus          sleep_flag = RESET;
+
+    /* 检查闹钟是否响 */
+    if (DS3231_CheckIfAlarm(1))
+    {
         DS3231_GetClock(&clock);
-        /* 00:00 ~ 06:00 睡眠 */
-        if (clock.hour<=6)
+        Clock_Display(&clock);
+        alarm_ring();
+        if (!a1_repeatable)
+            DS3231_TurnOnoffAlarm(1, DISABLE); /* 如果闹钟不需重复则关闭 */
+    }
+    if (DS3231_CheckIfAlarm(2))
+    {
+        DS3231_GetClock(&clock);
+        Clock_Display(&clock);
+        alarm_ring();
+        if (!a2_repeatable)
+            DS3231_TurnOnoffAlarm(2, DISABLE); /* 如果闹钟不需重复则关闭 */
+    }
+    /* 更新时钟读数 */
+    DS3231_GetClock(&clock);
+    /* 00:00 ~ 06:00 睡眠 */
+    if (clock.hour <= 6)
+    {
+        if (sleep_flag != SET)
         {
-            if (sleep_flag != SET)
-            {
-                /* 睡眠期间辉光管没必要显示 */
-                HV57708_TubePower(DISABLE);
-                sleep_flag = SET;
-            }
-            else /* 但手动打开辉光管仍可正常显示 */
-                Clock_Display(&clock);
+            /* 睡眠期间辉光管没必要显示 */
+            HV57708_TubePower(DISABLE);
+            sleep_flag = SET;
         }
         else
         {
-            if (sleep_flag != RESET)
-            {
-                HV57708_TubePower(ENABLE);
-                sleep_flag = RESET;
-            }
-            Clock_Display(&clock); /* 默认显示时间 */
-        }
-
-        cnt++;
-        if (cnt == 25) // 每 500ms 翻转一次 LED
-        {
-            cnt = 0;
-            LED_Flip();
+            /* 但手动打开辉光管仍可正常显示 */
+            Clock_Display(&clock);
         }
     }
+    else
+    {
+        if (sleep_flag != RESET)
+        {
+            HV57708_TubePower(ENABLE);
+            sleep_flag = RESET;
+        }
+        Clock_Display(&clock); /* 默认显示时间 */
+    }
+
+    LED_Flip();
 }
 
 /*******************************************************************************
@@ -473,7 +484,7 @@ void alarm_setting(void)
     if (mode!=1 && mode!=2 && mode!=3) return;
     if (mode == 3)
     {
-        DS3231_TurnOffAlarm(id);
+        DS3231_TurnOnoffAlarm(id, DISABLE);
         return;
     }
 
@@ -500,14 +511,14 @@ void alarm_setting(void)
             if (1 == id) /* 设置闹钟 1 */
             {
                 DS3231_SetAlarm1(HourMinuteSecond, &temp);
-                DS3231_TurnOnAlarm(1);
+                DS3231_TurnOnoffAlarm(1, ENABLE);
                 if (1 == mode)  a1_repeatable = RESET;
                 else            a1_repeatable = SET;
             }
             else         /* 设置闹钟 2 */
             {
                 DS3231_SetAlarm2(HourMinute, &temp);
-                DS3231_TurnOnAlarm(2);
+                DS3231_TurnOnoffAlarm(2, ENABLE);
                 if (1 == mode)  a2_repeatable = RESET;
                 else            a2_repeatable = SET;
             }
