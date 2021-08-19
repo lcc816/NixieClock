@@ -30,6 +30,7 @@ struct Button key0, key1, key2;   // 实例化 3 个按键
 volatile FlagStatus a1_repeatable = RESET;  // 闹钟是否重复
 volatile FlagStatus a2_repeatable = RESET;
 volatile FlagStatus ring_flag = RESET;      // 闹铃是否响
+DS3231_ClockTypeDef clock = {0};
 
 /* Private function prototypes -----------------------------------------------*/
 static uint8_t key0_pin_level(void);
@@ -54,7 +55,10 @@ static void array2date(DS3231_DateTypeDef *date, uint8_t array[]);
 static void clock2array(DS3231_ClockTypeDef *clock, uint8_t array[]);
 static void array2clock(DS3231_ClockTypeDef *clock, uint8_t array[]);
 
-void clock_half_second_handler(EdgeEvent edge);
+void clock_half_second_handler(void);
+void clock_alarm1_handler(void);
+void clock_alarm2_handler(void);
+void clock_alarm_both_handler(void);
 
 /* Private functions ---------------------------------------------------------*/
 
@@ -76,7 +80,10 @@ int main(void)
     Display_Init();
 
     DS3231_Init();
-    DS3231_BindSquareWaveHandler(clock_half_second_handler);
+    DS3231_Attach(DS3231_EV_SQW, clock_half_second_handler);
+    DS3231_Attach(DS3231_EV_A1, clock_alarm1_handler);
+    DS3231_Attach(DS3231_EV_A2, clock_alarm2_handler);
+    DS3231_Attach(DS3231_EV_AB, clock_alarm_both_handler);
 
     /* 按键相关初始化工作 - start */
     Keys_GPIO_Init();
@@ -108,31 +115,13 @@ int main(void)
 
 /*******************************************************************************
   * @brief  时钟 1Hz 方波上下沿的中断处理函数（500ms中断一次）
-  * @param  edge 标志上下沿
+  * @param  None
   * @retval None
 *******************************************************************************/
-void clock_half_second_handler(EdgeEvent edge)
+void clock_half_second_handler(void)
 {
-    static DS3231_ClockTypeDef clock = {0};
-    static FlagStatus          sleep_flag = RESET;
+    static FlagStatus sleep_flag = RESET;
 
-    /* 检查闹钟是否响 */
-    if (DS3231_CheckIfAlarm(1))
-    {
-        DS3231_GetClock(&clock);
-        Clock_Display(&clock);
-        alarm_ring();
-        if (!a1_repeatable)
-            DS3231_TurnOnoffAlarm(1, DISABLE); /* 如果闹钟不需重复则关闭 */
-    }
-    if (DS3231_CheckIfAlarm(2))
-    {
-        DS3231_GetClock(&clock);
-        Clock_Display(&clock);
-        alarm_ring();
-        if (!a2_repeatable)
-            DS3231_TurnOnoffAlarm(2, DISABLE); /* 如果闹钟不需重复则关闭 */
-    }
     /* 更新时钟读数 */
     DS3231_GetClock(&clock);
     /* 00:00 ~ 06:00 睡眠 */
@@ -160,7 +149,52 @@ void clock_half_second_handler(EdgeEvent edge)
         Clock_Display(&clock); /* 默认显示时间 */
     }
 
+    Neon_FlipAll();
     LED_Flip();
+}
+
+/*******************************************************************************
+  * @brief  闹钟 1 处理函数
+  * @param  None
+  * @retval None
+*******************************************************************************/
+void clock_alarm1_handler(void)
+{
+    DS3231_GetClock(&clock);
+    Clock_Display(&clock);
+    alarm_ring();
+    if (!a1_repeatable)
+        DS3231_TurnOnoffAlarm(1, DISABLE); /* 如果闹钟不需重复则关闭 */
+}
+
+/*******************************************************************************
+  * @brief  闹钟 2 处理函数
+  * @param  None
+  * @retval None
+*******************************************************************************/
+void clock_alarm2_handler(void)
+{
+    DS3231_GetClock(&clock);
+    Clock_Display(&clock);
+    alarm_ring();
+    if (!a2_repeatable)
+        DS3231_TurnOnoffAlarm(1, DISABLE); /* 如果闹钟不需重复则关闭 */
+}
+
+/*******************************************************************************
+  * @brief  闹钟 1 和 2 同时响的处理函数
+  * @param  None
+  * @retval None
+*******************************************************************************/
+void clock_alarm_both_handler(void)
+{
+    DS3231_GetClock(&clock);
+    Clock_Display(&clock);
+    alarm_ring();
+    if (!a2_repeatable)
+        DS3231_TurnOnoffAlarm(1, DISABLE);
+    if (!a2_repeatable)
+        DS3231_TurnOnoffAlarm(1, DISABLE);
 }
 
 /*******************************************************************************

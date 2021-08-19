@@ -49,7 +49,7 @@ void Clock_Display(DS3231_ClockTypeDef *clock)
     if (dis_data[5] != second_previous)
     {
         second_previous = dis_data[5];
-        Neon_FlipAll();
+        // Neon_FlipAll();
     }
 
     if (dis_data[2] != minute_previous)
@@ -111,7 +111,7 @@ void Date_Display(DS3231_DateTypeDef *date)
 void TempOrHumi_Display(float value)
 {
     uint8_t   dis_data[6];
-    uint16_t  data = value * 100;
+    uint16_t  data = (uint16_t) value * 100;
 
     dis_data[0] = 11; // 最高两位不显示 (大于 10 的数字不会显示)
     dis_data[1] = 11;

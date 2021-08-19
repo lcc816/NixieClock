@@ -22,12 +22,7 @@ void WriteControlByte(uint8_t data);
 uint8_t ReadStatusByte(void);
 void WriteStatusByte(uint8_t data);
 
-static DS3231_SqwCallback sqw_callback = NULL;
-
-void DS3231_BindSquareWaveHandler(DS3231_SqwCallback callback)
-{
-    sqw_callback = callback;
-}
+static DS3231_Callback cb[SUM_DS3231_EV] = {NULL};
 
 /*******************************************************************************
   * @brief  DS3231 引脚初始化，设置外部中断等
@@ -41,12 +36,12 @@ void DS3231_Init(void)
     EXTI_InitTypeDef EXTI_InitStructure;
     NVIC_InitTypeDef NVIC_InitStructure;
     /* 使能端口时钟 */
-    RCC_APB2PeriphClockCmd(DS3231_SQW_CLK, ENABLE);
+    RCC_APB2PeriphClockCmd(DS3231_INT_CLK, ENABLE);
     RCC_APB2PeriphClockCmd(RCC_APB2Periph_AFIO, ENABLE);
     /* GPIO 配置 */
-    GPIO_InitStructure.GPIO_Pin = DS3231_SQW_PIN;
+    GPIO_InitStructure.GPIO_Pin = DS3231_INT_PIN;
     GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN_FLOATING;
-    GPIO_Init(DS3231_SQW_PORT, &GPIO_InitStructure);
+    GPIO_Init(DS3231_INT_PORT, &GPIO_InitStructure);
 
     /* 外部中断配置 */
     GPIO_EXTILineConfig(DS3231_EXTI_PORT_SOURCE, DS3231_EXTI_PIN_SOURCE);
@@ -71,6 +66,18 @@ void DS3231_Init(void)
 }
 
 /*******************************************************************************
+  * @brief  DS3231 绑定事件的处理函数
+  * @param  event 事件号
+  * @param  callback 处理函数指针
+  * @retval None
+*******************************************************************************/
+void DS3231_Attach(DS3231_Event event, DS3231_Callback callback)
+{
+    if (SUM_DS3231_EV > event)
+        cb[event] = callback;
+}
+
+/*******************************************************************************
   * @brief  DS3231 外部中断处理函数。
   *         DS3231 的 SQW 引脚输出 1Hz 方波，设置外部中断双边沿触发，理论上 500ms 中断一次。
   *         中断发生时，通过读引脚电平判断是由上升沿还是下降沿触发
@@ -81,13 +88,27 @@ void DS3231_EXTI_IRQHandler(void)
 {
     if (EXTI_GetITStatus(DS3231_EXTI_LINE) == SET)
     {
-        if (sqw_callback != NULL)
-        {
-            EdgeEvent edge = DS3231_SQW_LEVEL == 0 ? EDGE_FALLING : EDGE_RISING;
-            sqw_callback(edge);
-        }
+        uint8_t cr, sr, tmp;
+        DS3231_Event event;
+
         /* 清除中断标志以等待下一次中断 */
         EXTI_ClearITPendingBit(DS3231_EXTI_LINE);
+
+        cr = ReadControlByte();
+        sr = ReadStatusByte();
+        /*
+         * 判断闹钟响不仅要 SR 的 AxF 位被置位，也要看 CR 对应的 AxIE 有没有置位
+         * 结果就是对 CR 和 SR 最低两位位与
+         **/
+        event = (DS3231_Event) (cr & sr & 0x3);
+
+        if (cb[event] != NULL)
+        {
+            cb[event]();
+        }
+        /* 清除闹钟响的标志 */
+        tmp = sr & ~0x3;
+        WriteStatusByte(tmp);
     }
 }
 

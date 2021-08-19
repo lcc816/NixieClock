@@ -49,23 +49,26 @@ typedef struct
 #define DS3231_ADDRESS      0x68
 
 /* DS3231 中断相关参数 */
-#define DS3231_SQW_PIN          GPIO_Pin_9
-#define DS3231_SQW_PORT         GPIOC
-#define DS3231_SQW_CLK          RCC_APB2Periph_GPIOC
+#define DS3231_INT_PIN          GPIO_Pin_9
+#define DS3231_INT_PORT         GPIOC
+#define DS3231_INT_CLK          RCC_APB2Periph_GPIOC
 #define DS3231_EXTI_LINE        EXTI_Line9
 #define DS3231_EXTI_PORT_SOURCE GPIO_PortSourceGPIOC
 #define DS3231_EXTI_PIN_SOURCE  GPIO_PinSource9
 #define DS3231_EXTI_IRQHandler  EXTI9_5_IRQHandler
 #define DS3231_EXTI_IRQ         EXTI9_5_IRQn
 
-#define DS3231_SQW_LEVEL    GPIO_ReadInputDataBit(DS3231_SQW_PORT, DS3231_SQW_PIN)
+#define DS3231_SQW_LEVEL    GPIO_ReadInputDataBit(DS3231_INT_PORT, DS3231_INT_PIN)
 
 typedef enum {
-    EDGE_RISING = 0,
-    EDGE_FALLING
-} EdgeEvent;
+    DS3231_EV_SQW = 0,
+    DS3231_EV_A1,
+    DS3231_EV_A2,
+    DS3231_EV_AB, /* both triggered */
+    SUM_DS3231_EV
+} DS3231_Event;
 
-typedef void (*DS3231_SqwCallback)(EdgeEvent edge);
+typedef void (*DS3231_Callback)(void);
 
 /* 闹钟屏蔽位 */
 #define  OncePerSecond          0x0F // 每秒
@@ -95,7 +98,7 @@ typedef void (*DS3231_SqwCallback)(EdgeEvent edge);
 
 /* Exported functions ------------------------------------------------------- */
 void DS3231_Init(void);
-void DS3231_BindSquareWaveHandler(DS3231_SqwCallback callback);
+void DS3231_Attach(DS3231_Event event, DS3231_Callback callback);
 void DS3231_GetTime(DS3231_TimeTypeDef *time);
 void DS3231_GetClock(DS3231_ClockTypeDef *clock);
 void DS3231_GetDate(DS3231_DateTypeDef *date);
