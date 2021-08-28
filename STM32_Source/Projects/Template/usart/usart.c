@@ -56,6 +56,24 @@ void USART1_Configuration(uint32_t bound)
     USART_Cmd(USART1, ENABLE);
 }
 
+#ifdef __GNUC__
+int _write(int fd, char *str, int len)
+{
+    /* implement your write code here */
+    char *p = str;
+    int DataIdx;
+    for (DataIdx = 0; DataIdx < len; DataIdx++)
+    {
+        /* 此句保证串口打印的第一个字符不会丢失 */
+        USART_ClearFlag(USART1, USART_FLAG_TC);
+        USART_SendData(USART1, *p);
+        /* 等待发送完毕 */
+        while (USART_GetFlagStatus(USART1, USART_FLAG_TC) == RESET);
+        p++;
+    }
+    return len;
+}
+#else /* __GNUC__ */
 /*******************************************************************************
  * @brief  重定向c库函数到USART1
  *******************************************************************************/
@@ -86,6 +104,7 @@ int fgetc(FILE *f)
 
     return (int)USART_ReceiveData(USART1);
 }
+#endif /* __GNUC__ */
 
 /*******************************************************************************
  * @brief  USART1发送一个字节
