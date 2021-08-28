@@ -1239,6 +1239,9 @@
     <group>
         <name>user</name>
         <file>
+            <name>$PROJ_DIR$\..\user\at_cmd.c</name>
+        </file>
+        <file>
             <name>$PROJ_DIR$\..\user\main.c</name>
         </file>
         <file>

@@ -10,6 +10,7 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "usart.h"
+#include <string.h>
 
 /*******************************************************************************
  * @brief  串口初始化
@@ -119,6 +120,41 @@ void USART1_SendData8(uint8_t Data)
         ;
 }
 
+uint16_t USART_RX_LEN = 0;
+char USART_RX_BUF[256] = {0};
+
+extern int nixie_at_cmd_handler(char *cmd, char *arg);
+
+int nixie_cmd_parser(char *buf)
+{
+    char *cmd = NULL, *arg = NULL;
+
+    /* empty string, do nathing */
+    if (*buf == '\0')
+        return 0;
+
+    cmd = strstr(buf, "AT+");
+    if (cmd != NULL)
+    {
+        /* this is an AT command */
+        cmd += 3;
+        /* parse its argument */
+        arg = strstr(cmd, "=");
+        if (arg != NULL)
+        {
+            *arg = '\0';
+            arg++;
+        }
+        nixie_at_cmd_handler(cmd, arg);
+    }
+    else
+    {
+        printf("unsupported: %s\r\n", buf);
+        return -1;
+    }
+    return 0;
+}
+
 /*******************************************************************************
  * @brief  USART1收中断处理函数
  * @param  None
@@ -126,7 +162,8 @@ void USART1_SendData8(uint8_t Data)
  *******************************************************************************/
 void USART1_IRQHandler(void)
 {
-    uint8_t val;
+    static uint8_t status = 0;
+    uint16_t val;
     if (USART_GetITStatus(USART1, USART_IT_RXNE) != RESET)
     {
         /* 读取接收数据寄存器 USART1->DR */
@@ -134,6 +171,38 @@ void USART1_IRQHandler(void)
         /* do something ... */
         if (val)
         {
+            switch (status)
+            {
+            case 1: /* 已接收到 0x0d */
+                if (val == 0x0a)
+                {
+                    USART_RX_BUF[USART_RX_LEN] = 0;
+                    /* 接收到一条指令 */
+                    nixie_cmd_parser(USART_RX_BUF);
+                    /* 处理完毕清空缓冲区 */
+                    USART_RX_LEN = 0;
+                    status = 0;
+                }
+                else /* 接收错误 */
+                {
+                    USART_RX_LEN = 0;
+                    status = 0;
+                }
+                break;
+            case 0:
+            default:
+                if (val == 0x0d)
+                {
+                    status = 1;
+                }
+                else if (val != 0x0a)
+                {
+                    USART_RX_BUF[USART_RX_LEN] = (char) val;
+                    USART_RX_LEN++;
+                    if (USART_RX_LEN > (sizeof(USART_RX_BUF) - 1))
+                        USART_RX_LEN = 0;
+                }
+            }
         }
     }
 }

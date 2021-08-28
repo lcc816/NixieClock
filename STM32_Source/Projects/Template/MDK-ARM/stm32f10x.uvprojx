@@ -445,6 +445,11 @@
               <FileType>1</FileType>
               <FilePath>..\user\stm32f10x_it.c</FilePath>
             </File>
+            <File>
+              <FileName>at_cmd.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\user\at_cmd.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
