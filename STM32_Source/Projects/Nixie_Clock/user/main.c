@@ -18,6 +18,8 @@
 #include "display.h"
 #include "multi_button.h"
 #include "timer.h"
+#include "usart.h"
+#include "nixie_misc.h"
 
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
@@ -78,6 +80,14 @@ int main(void)
     Buzzer_Init();
     Buzzer_Sound2(); // 嘀
     Display_Init();
+
+    USART1_Configuration(9600);
+    printf("   _   _  _        _         _____  _               _    \r\n"
+           "  | \\ | |(_)      (_)       /  __ \\| |             | |   \r\n"
+           "  |  \\| | _ __  __ _   ___  | /  \\/| |  ___    ___ | | __\r\n"
+           "  | . ` || |\\ \\/ /| | / _ \\ | |    | | / _ \\  / __|| |/ /\r\n"
+           "  | |\\  || | >  < | ||  __/ | \\__/\\| || (_) || (__ |   < \r\n"
+           "  \\_| \\_/|_|/_/\\_\\|_| \\___|  \\____/|_| \\___/  \\___||_|\\_\\\r\n");
 
     DS3231_Init();
     DS3231_Attach(DS3231_EV_SQW, clock_half_second_handler);

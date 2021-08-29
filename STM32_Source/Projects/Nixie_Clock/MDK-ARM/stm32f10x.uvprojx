@@ -470,6 +470,16 @@
               <FileType>1</FileType>
               <FilePath>..\user\display.c</FilePath>
             </File>
+            <File>
+              <FileName>at_cmd.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\user\at_cmd.c</FilePath>
+            </File>
+            <File>
+              <FileName>nixie_misc.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\user\nixie_misc.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>

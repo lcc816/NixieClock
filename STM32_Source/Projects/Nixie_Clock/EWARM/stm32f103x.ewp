@@ -1266,10 +1266,16 @@
     <group>
         <name>user</name>
         <file>
+            <name>$PROJ_DIR$\..\user\at_cmd.c</name>
+        </file>
+        <file>
             <name>$PROJ_DIR$\..\user\display.c</name>
         </file>
         <file>
             <name>$PROJ_DIR$\..\user\main.c</name>
+        </file>
+        <file>
+            <name>$PROJ_DIR$\..\user\nixie_misc.c</name>
         </file>
         <file>
             <name>$PROJ_DIR$\..\user\stm32f10x_it.c</name>
