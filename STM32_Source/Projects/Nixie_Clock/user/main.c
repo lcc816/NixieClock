@@ -79,8 +79,9 @@ int main(void)
     //WS2812B_Init();
     Buzzer_Init();
     Buzzer_Sound2(); // 嘀
+    delay_ms(100);
     Display_Init();
-
+    delay_ms(500);
     USART1_Configuration(9600);
     printf("   _   _  _        _         _____  _               _    \r\n"
            "  | \\ | |(_)      (_)       /  __ \\| |             | |   \r\n"
@@ -90,6 +91,7 @@ int main(void)
            "  \\_| \\_/|_|/_/\\_\\|_| \\___|  \\____/|_| \\___/  \\___||_|\\_\\\r\n");
 
     DS3231_Init();
+    delay_ms(500);
     DS3231_Attach(DS3231_EV_SQW, clock_half_second_handler);
     DS3231_Attach(DS3231_EV_A1, clock_alarm1_handler);
     DS3231_Attach(DS3231_EV_A2, clock_alarm2_handler);
@@ -119,7 +121,8 @@ int main(void)
 
     while(1)
     {
-        delay_ms(20);
+        delay_ms(500);
+        LED_Flip();
     }
 }
 
@@ -160,7 +163,6 @@ void clock_half_second_handler(void)
     }
 
     Neon_FlipAll();
-    LED_Flip();
 }
 
 /*******************************************************************************
